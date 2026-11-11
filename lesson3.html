@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 3: Безопасность и Долги | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --success: #4caf50; --danger: #e57373; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .content { flex: 1; padding: 25px 20px; overflow-y: auto; }
+        
+        .quote-block { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); font-style: italic; text-align: center; margin-bottom: 25px; padding: 20px; background: rgba(212, 175, 55, 0.05); border-radius: 12px; border: 1px dashed var(--gold-primary); line-height: 1.5; }
+        .text-block { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+        .text-block strong { color: var(--text-main); font-weight: 600; }
+        
+        h2 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--gold-primary); margin: 35px 0 15px; line-height: 1.3; }
+        h3 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--text-main); margin: 25px 0 12px; }
+
+        .comparison-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 25px; }
+        .comp-card { background: var(--surface); border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; }
+        .comp-title { font-size: 15px; font-family: 'Playfair Display', serif; font-weight: 600; color: var(--gold-light); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .comp-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+        .comp-text ul { padding-left: 18px; margin-top: 8px; }
+        .comp-text li { margin-bottom: 4px; }
+
+        .generator-card { background: linear-gradient(145deg, #111, var(--surface)); border: 1px solid var(--gold-primary); border-radius: 16px; padding: 25px 20px; margin-bottom: 35px; }
+        .generator-card h3 { color: var(--gold-light); margin-top: 0; text-align: center; font-size: 18px; margin-bottom: 5px; }
+        .input-group { margin-bottom: 15px; }
+        .input-wrapper { position: relative; }
+        .input-wrapper input { width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; outline: none; transition: 0.3s; }
+        .input-wrapper input:focus { border-color: var(--gold-primary); }
+        .input-wrapper span { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; }
+        
+        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed #333; }
+        .result-row:last-child { border-bottom: none; }
+        .res-label { font-size: 13px; color: var(--text-muted); }
+        .res-val { font-size: 16px; font-family: 'Playfair Display', serif; font-weight: 600; color: var(--text-main); }
+
+        .module-divider { height: 1px; background: var(--border-color); margin: 35px 0; }
+
+        .materials-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .material-link { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; text-decoration: none; transition: 0.2s; }
+        .material-link:active { transform: scale(0.98); border-color: var(--gold-primary); }
+        .material-icon { font-size: 24px; margin-right: 15px; width: 44px; height: 44px; background: rgba(212, 175, 55, 0.1); border-radius: 10px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .material-info { flex: 1; }
+        .material-title { font-size: 14px; color: var(--text-main); font-weight: 500; margin-bottom: 4px; }
+        .material-desc { font-size: 12px; color: var(--text-muted); }
+        .material-arrow { color: var(--gold-primary); font-size: 20px; font-weight: 600; margin-left: 10px; }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .save-btn { width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .save-btn:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='index.html'">←</button>
+            <div class="header-title">
+                <h1>Урок 3</h1>
+                <p>Безопасность и Долги</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content">
+            
+            <div class="quote-block">
+                «Инвестировать деньги, не сформировав подушку безопасности и не разобравшись с долгами — это все равно что строить крышу на зыбучих песках».
+            </div>
+
+            <p class="text-block">В этом уроке мы разберем, как сформировать надежный фундамент финансовой безопасности и какие стратегии помогут быстрее избавиться от накопленных долгов.</p>
+
+            <h2>Финансовая подушка: Ваш главный щит</h2>
+            <p class="text-block">Подушка безопасности — это неприкосновенный запас денег на случай форс-мажора (потеря работы, проблемы со здоровьем). Храните её исключительно в ликвидных инструментах (накопительные счета, вклады).</p>
+
+            <!-- ИНТЕРАКТИВНЫЙ РАСЧЕТ ПОДУШКИ -->
+            <div class="generator-card">
+                <h3>Расчет подушки безопасности</h3>
+                <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 20px;">Введите ваши базовые ежемесячные расходы.</p>
+                
+                <div class="input-group">
+                    <div class="input-wrapper"><input type="number" id="baseExp" placeholder="Например: 80000" oninput="calcCushion()"><span>₽</span></div>
+                </div>
+
+                <div class="result-row">
+                    <span class="res-label">Минимум (3 месяца)</span>
+                    <span class="res-val" id="c3">0 ₽</span>
+                </div>
+                <div class="result-row">
+                    <span class="res-label">Оптимум (6 месяцев)</span>
+                    <span class="res-val" id="c6" style="color: var(--gold-light);">0 ₽</span>
+                </div>
+                <div class="result-row">
+                    <span class="res-label">Максимум (12 месяцев)</span>
+                    <span class="res-val" id="c12">0 ₽</span>
+                </div>
+            </div>
+
+            <h2>Страхование и защита капитала</h2>
+            <p class="text-block">Защитите себя и близких от непредвиденных катастроф. Базовый уровень защиты включает страхование жизни и здоровья главного кормильца, а также страхование имущества (ответственность перед соседями).</p>
+
+            <h2>Ликвидация долгов: Стратегии «Лавина» и «Снежный ком»</h2>
+            <p class="text-block">Если у вас несколько кредитов, хаотичное внесение денег приводит к переплатам. Для их эффективного закрытия используются две проверенные стратегии.</p>
+
+            <!-- СРАВНЕНИЕ СТРАТЕГИЙ -->
+            <div class="comparison-grid">
+                
+                <div class="comp-card" style="border-top: 3px solid var(--gold-primary);">
+                    <div class="comp-title">🏔 Стратегия «Лавина» (Математическая)</div>
+                    <div class="comp-text">
+                        Вы выписываете все кредиты в порядке <strong>уменьшения процентной ставки</strong>. По всем долгам вносите минимальные платежи, а всю свободную дельту направляете в кредит с самой высокой ставкой.
+                        <ul>
+                            <li><strong>Плюсы:</strong> Самый выгодный метод математически. Вы минимально переплачиваете банку проценты.</li>
+                            <li><strong>Минусы:</strong> Если самый дорогой кредит очень большой, первый результат придется ждать дольше.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="comp-card" style="border-top: 3px solid #64b5f6;">
+                    <div class="comp-title">⛄ Стратегия «Снежный ком» (Психологическая)</div>
+                    <div class="comp-text">
+                        Вы выписываете долги в порядке <strong>возрастания суммы остатка</strong> (от самого маленького к большому). Минимальные платежи — везде, а всю свободную дельту бросаете на погашение самого мелкого долга.
+                        <ul>
+                            <li><strong>Плюсы:</strong> Быстрая психологическая победа. Закрыв первый небольшой долг, вы получаете мощный прилив мотивации.</li>
+                            <li><strong>Минусы:</strong> Математически менее выгодна, вы можете переплатить банку чуть больше процентов.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+
+            <h3>Пример из жизни</h3>
+            <p class="text-block">Представьте, что у вас три долга:<br>
+            1. Кредитная карта на 50 000 ₽ под 30% годовых.<br>
+            2. Потребительский кредит на 200 000 ₽ под 20% годовых.<br>
+            3. Автокредит на 800 000 ₽ под 14% годовых.</p>
+            
+            <p class="text-block">• <strong>При «Лавине»</strong> вы начнете агрессивно гасить кредитную карту (там выше всего процент — 30%), экономя максимум денег.<br>
+            • <strong>При «Снежном коме»</strong> вы начнете с кредитной карты тоже (там меньше всего сумма — 50 000 ₽), быстро закроете её, почувствуете уверенность и перейдете к следующему долгу.</p>
+
+            <div class="module-divider"></div>
+
+            <h2>Практика к Уроку 3</h2>
+            <div class="materials-list">
+                <a href="guide3.html" class="material-link">
+                    <div class="material-icon">📖</div>
+                    <div class="material-info"><div class="material-title">Гайд к уроку</div><div class="material-desc">Памятка по безопасности и защите капитала</div></div>
+                    <div class="material-arrow">→</div>
+                </a>
+                <a href="freedom.html" class="material-link">
+                    <div class="material-icon" style="background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); color: #000;">◱</div>
+                    <div class="material-info"><div class="material-title">Карта Свободы (Уровень 1)</div><div class="material-desc">Зафиксируйте размер вашей подушки</div></div>
+                    <div class="material-arrow">→</div>
+                </a>
+                <a href="accelerator.html" class="material-link">
+                    <div class="material-icon">⚡</div>
+                    <div class="material-info"><div class="material-title">Ускоритель погашения</div><div class="material-desc">Примените стратегии на практике</div></div>
+                    <div class="material-arrow">→</div>
+                </a>
+                <a href="workbook3.html" class="material-link">
+                    <div class="material-icon">📓</div>
+                    <div class="material-info"><div class="material-title">Рабочая тетрадь</div><div class="material-desc">Аудит рисков и составление списка долгов</div></div>
+                    <div class="material-arrow">→</div>
+                </a>
+                <a href="test3.html" class="material-link" style="border-color: rgba(212, 175, 55, 0.4);">
+                    <div class="material-icon">✅</div>
+                    <div class="material-info"><div class="material-title">Пройти тест 3</div><div class="material-desc">Проверка знаний по Уроку 3</div></div>
+                    <div class="material-arrow">→</div>
+                </a>
+            </div>
+
+        </div>
+
+        <div class="bottom-action">
+            <button class="save-btn" id="finishBtn" onclick="completeLesson()">Завершить Урок 3</button>
+        </div>
+    </div>
+
+    <script>
+        function calcCushion() {
+            const exp = parseFloat(document.getElementById('baseExp').value) || 0;
+            document.getElementById('c3').textContent = (exp * 3).toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('c6').textContent = (exp * 6).toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('c12').textContent = (exp * 12).toLocaleString('ru-RU') + ' ₽';
+        }
+
+        function completeLesson() {
+            localStorage.setItem('module3_completed', 'true');
+            const btn = document.getElementById('finishBtn');
+            btn.style.background = 'var(--success)';
+            btn.style.color = '#fff';
+            btn.textContent = '✓ Урок пройден!';
+            setTimeout(() => { window.location.href = 'index.html'; }, 800);
+        }
+    </script>
+</body>
+</html>

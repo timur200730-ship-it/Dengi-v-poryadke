@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фокус Внимания | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; }
+        
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        .matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; }
+        .quadrant { background: var(--surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; height: 180px; }
+        .q-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        
+        /* Цвета квадрантов */
+        .q1 { border-top: 3px solid #e57373; } .q1 .q-title { color: #e57373; }
+        .q2 { border-top: 3px solid var(--gold-primary); } .q2 .q-title { color: var(--gold-primary); }
+        .q3 { border-top: 3px solid #64b5f6; } .q3 .q-title { color: #64b5f6; }
+        .q4 { border-top: 3px solid #757575; } .q4 .q-title { color: #757575; }
+
+        .quadrant textarea { flex: 1; background: transparent; border: none; color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 12px; resize: none; outline: none; line-height: 1.4; }
+        .quadrant textarea::placeholder { color: #444; }
+
+        .info-block { background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 20px; }
+        .info-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-primary); margin-bottom: 8px; }
+        .info-text { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .btn-export { width: 100%; padding: 16px; border-radius: 12px; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 15px; font-weight: 600; cursor: pointer; }
+        .save-btn { width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-size: 16px; font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="saveDataAndExit('index.html')">←</button>
+            <div class="header-title"><h1>Фокус Внимания</h1><p>Матрица Эйзенхауэра</p></div>
+            <div style="width: 24px;"></div>
+        </div>
+        <div class="content">
+            <div class="matrix-grid">
+                <div class="quadrant q1">
+                    <div class="q-title"><span>Важно</span><span>Срочно</span></div>
+                    <textarea id="q1" placeholder="Кризисы, дедлайны, проблемы... (Делать самому немедленно)"></textarea>
+                </div>
+                <div class="quadrant q2">
+                    <div class="q-title"><span>Важно</span><span>Не срочно</span></div>
+                    <textarea id="q2" placeholder="Стратегия, инвестиции, здоровье, развитие... (Запланировать!)"></textarea>
+                </div>
+                <div class="quadrant q3">
+                    <div class="q-title"><span>Не важно</span><span>Срочно</span></div>
+                    <textarea id="q3" placeholder="Чужие просьбы, звонки, рутина... (Делегировать)"></textarea>
+                </div>
+                <div class="quadrant q4">
+                    <div class="q-title"><span>Не важно</span><span>Не срочно</span></div>
+                    <textarea id="q4" placeholder="Соцсети, сериалы, пожиратели времени... (Удалить)"></textarea>
+                </div>
+            </div>
+
+            <div class="info-block">
+                <div class="info-title">ℹ️ Секрет продуктивности</div>
+                <div class="info-text">Успешные люди проводят 80% времени в <strong>Золотом квадрате (Важно / Не срочно)</strong>. Именно там лежат ваши инвестиции, обучение и планирование будущего. Распишите все дела из головы в матрицу и безжалостно вычеркните всё из нижнего правого угла.</div>
+            </div>
+        </div>
+        <div class="bottom-action">
+            <button class="btn-export" onclick="exportExcel()">Скачать матрицу (Excel)</button>
+            <button class="save-btn" onclick="saveDataAndExit('index.html')">Сохранить фокус</button>
+        </div>
+    </div>
+
+    <script>
+        async function exportExcel() {
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Матрица');
+            ws.columns = [{width: 40}, {width: 40}];
+            ws.addRow(['СРОЧНО', 'НЕ СРОЧНО']).font = {bold: true};
+            ws.addRow([document.getElementById('q1').value, document.getElementById('q2').value]);
+            ws.addRow(['НАСКОЛЬКО ВАЖНО?', '']).font = {bold: true, color: {argb: 'FFD4AF37'}};
+            ws.addRow([document.getElementById('q3').value, document.getElementById('q4').value]);
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Focus_Matrix.xlsx`; link.click();
+        }
+
+        const PAGE_KEY = 'matrix_module';
+        function saveAllData() {
+            const data = {
+                q1: document.getElementById('q1').value, q2: document.getElementById('q2').value,
+                q3: document.getElementById('q3').value, q4: document.getElementById('q4').value
+            };
+            localStorage.setItem(PAGE_KEY, JSON.stringify(data));
+        }
+        function loadAllData() {
+            const saved = localStorage.getItem(PAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                document.getElementById('q1').value = data.q1 || ''; document.getElementById('q2').value = data.q2 || '';
+                document.getElementById('q3').value = data.q3 || ''; document.getElementById('q4').value = data.q4 || '';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadAllData);
+        function saveDataAndExit(url) { saveAllData(); window.location.href = url; }
+    </script>
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Финансовый челлендж | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --surface: #171717;
+            --surface-hover: #262626;
+            --gold-primary: #d4af37;
+            --gold-light: #fde08b;
+            --text-main: #ffffff;
+            --text-muted: #a3a3a3;
+            --border-color: #333333;
+            --success: #4caf50;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .header { text-align: center; margin-bottom: 10px; }
+        
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: var(--gold-light);
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .header .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Прогресс-бар */
+        .progress-container {
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 25px 30px;
+            text-align: center;
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .progress-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .progress-count {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--gold-primary);
+            line-height: 1;
+        }
+
+        .progress-track {
+            height: 8px;
+            background: var(--bg-dark);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #222;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold-primary), var(--gold-light));
+            width: 0%;
+            transition: width 0.5s ease-out;
+        }
+
+        /* Сетка челленджа */
+        .challenge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .task-card {
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .task-card:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: translateY(-3px);
+            background: var(--surface-hover);
+        }
+
+        .task-card.completed {
+            border-color: var(--gold-primary);
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        .task-card.completed::before {
+            content: ''; position: absolute; left: 0; top: 0; width: 4px; height: 100%; background: var(--gold-primary);
+        }
+
+        /* Кастомный чекбокс */
+        .task-checkbox {
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            background: var(--bg-dark);
+        }
+
+        .task-card:hover .task-checkbox { border-color: rgba(212, 175, 55, 0.5); }
+        
+        .task-card.completed .task-checkbox {
+            background: var(--gold-primary);
+            border-color: var(--gold-primary);
+        }
+
+        .task-card.completed .task-checkbox::after {
+            content: '✓';
+            color: #000;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .task-content { flex: 1; }
+        .task-num { font-size: 0.75rem; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600; }
+        .task-title { font-size: 1rem; color: var(--text-main); font-weight: 500; line-height: 1.4; margin-bottom: 8px; }
+        .task-hint-link { font-size: 0.8rem; color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; }
+
+        /* Модальное окно */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .modal-box {
+            background: var(--surface); border: 1px solid var(--gold-primary);
+            border-radius: 20px; width: 100%; max-width: 500px; padding: 30px;
+            transform: translateY(20px); transition: transform 0.3s;
+            position: relative; margin: 20px; max-height: 90vh; overflow-y: auto;
+        }
+
+        .modal-overlay.active .modal-box { transform: translateY(0); }
+
+        .btn-close {
+            position: absolute; top: 20px; right: 20px; background: none; border: none;
+            color: var(--text-muted); font-size: 24px; cursor: pointer; transition: color 0.2s;
+        }
+        .btn-close:hover { color: var(--text-main); }
+
+        .modal-num { font-size: 0.8rem; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
+        .modal-title { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--gold-light); margin-bottom: 20px; line-height: 1.3; }
+        .modal-desc { font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 25px; }
+
+        .modal-textarea {
+            width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 15px; color: var(--text-main); font-family: 'Inter', sans-serif;
+            font-size: 0.95rem; outline: none; resize: vertical; min-height: 100px; margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        .modal-textarea:focus { border-color: var(--gold-primary); }
+
+        .modal-btn {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-light));
+            color: #000; border: none; padding: 16px; border-radius: 12px; font-weight: 600;
+            font-size: 1rem; width: 100%; cursor: pointer; transition: transform 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .modal-btn:active { transform: scale(0.98); }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .progress-container { padding: 20px; }
+            .challenge-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="header">
+            <h1>25 Финансовых дел</h1>
+            <div class="subtitle">Челлендж для прокачки финансов</div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-header">
+                <div class="progress-title">Твой прогресс</div>
+                <div class="progress-count"><span id="completed-count">0</span> / 25</div>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="challenge-grid" id="grid-container">
+            <!-- Карточки генерируются через JS -->
+        </div>
+
+    </div>
+
+    <!-- Модальное окно для деталей -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-box">
+            <button class="btn-close" onclick="closeModal()">×</button>
+            <div class="modal-num" id="modal-num">Дело #1</div>
+            <h2 class="modal-title" id="modal-title">Сначала накопи, потом потрать</h2>
+            <div class="modal-desc" id="modal-desc">Подробное описание задания...[span_4](start_span)[span_4](end_span)</div>
+            
+            <textarea class="modal-textarea" id="modal-note" placeholder="Мои заметки и идеи по этому пункту..."></textarea>
+            
+            <button class="modal-btn" id="modal-action-btn">Отметить как выполненное</button>
+        </div>
+    </div>
+
+    <script>
+        // База данных заданий на основе предоставленного PDF[span_5](start_span)[span_5](end_span)
+        const tasksData = [
+            { id: 1, title: "Сначала накопи, потом потрать", desc: "Хочешь приобрести что-то дорогое? Попробуй сначала на это накопить. Например, через месяц нужна новая обувь — начни экономить на ежедневных походах за кофе или покупках на маркетплейсах. Узнай, насколько сильно ты нуждаешься в этой покупке[span_6](start_span)[span_6](end_span)." },
+            { id: 2, title: "Составь меню на неделю", desc: "Составляй список блюд и необходимых продуктов в начале каждой недели. Предварительно подумай, какие продукты остались лежать без дела. Это поможет удержаться от импульсивных трат на еду[span_7](start_span)[span_7](end_span)." },
+            { id: 3, title: "Проведи чекап трат", desc: "Записывай абсолютно все свои траты в течение недели. Да, даже мусорные пакеты. Часто мы не осознаем, как много уходит на мелкие и незначительные траты[span_8](start_span)[span_8](end_span)." },
+            { id: 4, title: "Откладывай по погоде", desc: "Преврати накопления в игру: каждый день в течение недели смотри на термометр и откладывай сумму, эквивалентную температуре (на минус не обращай внимания). По желанию можно прибавить нолик[span_9](start_span)[span_9](end_span)." },
+            { id: 5, title: "Проведи выходные без трат", desc: "Устрой детокс: проведи одни выходные без трат. Отправляйся с друзьями на прогулку в парк, устрой вечер кино, настольных игр или сходи в бесплатный музей[span_10](start_span)[span_10](end_span)." },
+            { id: 6, title: "Узнай, что такое облигации", desc: "Облигации отлично подходят для старта: они просты, надежны и дешевы (обычно не дороже 1000 рублей). Изучи, как они работают и как на них заработать[span_11](start_span)[span_11](end_span)." },
+            { id: 7, title: "Сходи в магазин со списком", desc: "Чтобы подходить к тратам ответственно, составляй список продуктов. Приоритизируй желаемые покупки: выбери самую важную на этот месяц, а остальные отложи[span_12](start_span)[span_12](end_span)." },
+            { id: 8, title: "Открой вклад или накопительный счет", desc: "Зайди в приложение банка и зафиксируй хорошую доходность. Также рассмотри возможность открытия валютного вклада для защиты от обесценения рубля[span_13](start_span)[span_13](end_span)." },
+            { id: 9, title: "Узнай, что такое акции", desc: "Зарабатывать просто: покупаешь по небольшой цене — компания развивается — продаешь подорожавшую бумагу. Это шанс настроить дополнительный источник дохода[span_14](start_span)[span_14](end_span)." },
+            { id: 10, title: "Пофантазируй о комфортной жизни", desc: "Посчитай, сколько конкретно тебе нужно зарабатывать на «ту самую» комфортную жизнь. Когда есть цифра, намного легче наметить путь[span_15](start_span)[span_15](end_span)." },
+            { id: 11, title: "Узнай, что такое фонды", desc: "Инвестиционные фонды — очень перспективный и дешевый актив. В банковских приложениях можно найти фонды даже за несколько рублей[span_16](start_span)[span_16](end_span)." },
+            { id: 12, title: "Настрой автопополнение", desc: "Автопополнение поможет сделать твои накопления регулярными и системными. Настрой автоматический перевод на вклад или брокерский счет[span_17](start_span)[span_17](end_span)." },
+            { id: 13, title: "Проверь кредитную историю", desc: "Дважды в год историю можно проверить бесплатно. Сделай запрос через Госуслуги на получение списка БКИ, а затем запроси отчет на сайте самого БКИ[span_18](start_span)[span_18](end_span)." },
+            { id: 14, title: "Придумай доп. источник дохода", desc: "Какое хобби ты можешь монетизировать? Может, у тебя есть профессиональное знание для консультаций или ты хорошо делаешь что-то руками?[span_19](start_span)[span_19](end_span)" },
+            { id: 15, title: "Проверь налоговые вычеты", desc: "Проверь, какие вычеты доступны: стандартные, социальные (образование, медицина), имущественные или инвестиционные (до 52 000 руб. по ИИС)[span_20](start_span)[span_20](end_span)." },
+            { id: 16, title: "Изучи рынок вакансий", desc: "Не обязательно менять работу. Узнай, как высоко рынок оценивает твою текущую работу и какие навыки тебе следует прокачать для роста дохода[span_21](start_span)[span_21](end_span)." },
+            { id: 17, title: "Спланируй бюджет на покупки", desc: "Планируй бюджет на подарки и сезонные покупки заранее! Открой отдельный счет, куда будешь откладывать деньги к распродажам или праздникам[span_22](start_span)[span_22](end_span)." },
+            { id: 18, title: "Начни копить в режиме 1/365", desc: "Каждый день откладывай сумму, равную номеру дня в году (День 1 = 1 рубль, День 365 = 365 рублей). За год так можно накопить 66 795 рублей[span_23](start_span)[span_23](end_span)!" },
+            { id: 19, title: "Проверь свои подписки", desc: "Проверь тарифные планы на интернет, ТВ и подписки на сервисы. Найди более выгодный тариф или отключи то, что больше не интересно[span_24](start_span)[span_24](end_span)." },
+            { id: 20, title: "Продай ненужную вещь", desc: "Выдели день на разбор гардероба или шкафа. Со стопроцентной вероятностью ты найдешь ненужные вещи. Продажа освободит место и принесет деньги[span_25](start_span)[span_25](end_span)." },
+            { id: 21, title: "Вспомни импульсивные траты", desc: "Вспомни все импульсивные траты за последние 3 месяца. Проанализируй, на что ушли деньги и почему это случилось. Поработай с причинами[span_26](start_span)[span_26](end_span)." },
+            { id: 22, title: "Узнай о привилегиях банка", desc: "Банки часто предоставляют особые привилегии: скидки, партнерские акции, кэшбэк. Изучи их в приложении твоего банка[span_27](start_span)[span_27](end_span)." },
+            { id: 23, title: "Создай финансовую подушку", desc: "Минимальная подушка, которая должна лежать на отдельном счете — это размер твоих ежемесячных расходов, умноженный на 3-6 месяцев[span_28](start_span)[span_28](end_span)." },
+            { id: 24, title: "Открой валютный вклад", desc: "Диверсифицируй вложения. Помимо процента, валютный вклад может защитить сбережения от обесценения рубля за счет курсовой разницы[span_29](start_span)[span_29](end_span)." },
+            { id: 25, title: "Пройди курс «Деньги в порядке»", desc: "Постоянная учеба и саморазвитие — ключ к финансовому благополучию. Не бойся ошибаться и развивай заложенные в тебе качества[span_30](start_span)[span_30](end_span)." }
+        ];
+
+        let state = JSON.parse(localStorage.getItem('financeChallengeState')) || {};
+        let currentModalId = null;
+
+        const gridContainer = document.getElementById('grid-container');
+        const countDisplay = document.getElementById('completed-count');
+        const progressFill = document.getElementById('progress-fill');
+        const modal = document.getElementById('modal');
+
+        // Инициализация сетки
+        function renderGrid() {
+            gridContainer.innerHTML = '';
+            let completed = 0;
+
+            tasksData.forEach((task, index) => {
+                const isDone = state[task.id]?.done || false;
+                if (isDone) completed++;
+
+                const card = document.createElement('div');
+                card.className = `task-card ${isDone ? 'completed' : ''}`;
+                card.onclick = (e) => {
+                    // Если клик не по чекбоксу напрямую, открываем модалку
+                    if(!e.target.closest('.task-checkbox')) {
+                        openModal(task.id);
+                    }
+                };
+
+                card.innerHTML = `
+                    <div class="task-checkbox" onclick="toggleTask(${task.id}, event)"></div>
+                    <div class="task-content">
+                        <div class="task-num">Дело ${index + 1} / 25</div>
+                        <div class="task-title">${task.title}</div>
+                        <div class="task-hint-link">Подробнее и заметки →</div>
+                    </div>
+                `;
+                gridContainer.appendChild(card);
+            });
+
+            updateProgress(completed);
+        }
+
+        function toggleTask(id, event) {
+            if(event) event.stopPropagation();
+            
+            if (!state[id]) state[id] = { done: false, note: '' };
+            state[id].done = !state[id].done;
+            
+            saveState();
+            renderGrid();
+        }
+
+        function updateProgress(completed) {
+            countDisplay.textContent = completed;
+            const percent = (completed / 25) * 100;
+            progressFill.style.width = `${percent}%`;
+        }
+
+        function saveState() {
+            localStorage.setItem('financeChallengeState', JSON.stringify(state));
+        }
+
+        function openModal(id) {
+            currentModalId = id;
+            const task = tasksData.find(t => t.id === id);
+            const taskState = state[id] || { done: false, note: '' };
+
+            document.getElementById('modal-num').textContent = `Дело #${id}`;
+            document.getElementById('modal-title').textContent = task.title;
+            document.getElementById('modal-desc').innerHTML = task.desc;
+            
+            const noteInput = document.getElementById('modal-note');
+            noteInput.value = taskState.note || '';
+            
+            const actionBtn = document.getElementById('modal-action-btn');
+            if (taskState.done) {
+                actionBtn.textContent = 'Снять отметку о выполнении';
+                actionBtn.style.background = 'transparent';
+                actionBtn.style.border = '1px solid var(--border-color)';
+                actionBtn.style.color = 'var(--text-muted)';
+            } else {
+                actionBtn.textContent = 'Отметить как выполненное';
+                actionBtn.style.background = 'linear-gradient(135deg, var(--gold-primary), var(--gold-light))';
+                actionBtn.style.border = 'none';
+                actionBtn.style.color = '#000';
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            // Сохраняем заметку перед закрытием
+            if (currentModalId) {
+                if (!state[currentModalId]) state[currentModalId] = { done: false, note: '' };
+                state[currentModalId].note = document.getElementById('modal-note').value;
+                saveState();
+            }
+            modal.classList.remove('active');
+            currentModalId = null;
+        }
+
+        document.getElementById('modal-action-btn').addEventListener('click', () => {
+            toggleTask(currentModalId);
+            closeModal();
+        });
+
+        // Закрытие по клику вне окна
+        modal.addEventListener('click', (e) => {
+            if(e.target === modal) closeModal();
+        });
+
+        renderGrid();
+    </script>
+</body>
+</html>

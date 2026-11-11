@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рентген покупок | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --danger: #e57373; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; }
+        
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        .calc-card { background: var(--surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 25px; }
+        .input-row { margin-bottom: 15px; }
+        .input-row label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+        .input-wrapper { position: relative; }
+        .input-wrapper input { width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; outline: none; }
+        .input-wrapper input:focus { border-color: var(--gold-primary); }
+        .input-wrapper span { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+
+        .result-box { background: linear-gradient(145deg, #111, var(--surface)); border: 1px dashed var(--gold-primary); border-radius: 16px; padding: 25px 20px; margin-bottom: 20px; text-align: center; }
+        .result-title { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+        .result-val { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--danger); font-weight: 600; margin-bottom: 5px; }
+        .result-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 20px; }
+        
+        .future-val { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--gold-light); font-weight: 600; margin-bottom: 5px; }
+
+        .info-block { background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 20px; margin-top: 10px; }
+        .info-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-primary); margin-bottom: 12px; }
+        .info-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .btn-export { width: 100%; padding: 16px; border-radius: 12px; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 15px; font-weight: 600; cursor: pointer; }
+        .save-btn { width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-size: 16px; font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="saveDataAndExit('index.html')">←</button>
+            <div class="header-title"><h1>Рентген покупок</h1><p>Осознанное потребление</p></div>
+            <div style="width: 24px;"></div>
+        </div>
+        <div class="content">
+            <div class="calc-card">
+                <div class="input-row">
+                    <label>Что вы хотите купить?</label>
+                    <div class="input-wrapper"><input type="text" id="itemName" placeholder="Например: Новый iPhone" oninput="calcXray()"></div>
+                </div>
+                <div class="input-row">
+                    <label>Цена покупки</label>
+                    <div class="input-wrapper"><input type="number" id="itemPrice" placeholder="150000" oninput="calcXray()"><span>₽</span></div>
+                </div>
+                <div class="input-row" style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                    <label>Ваш средний доход в месяц</label>
+                    <div class="input-wrapper"><input type="number" id="salary" placeholder="100000" oninput="calcXray()"><span>₽</span></div>
+                </div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-title">Реальная стоимость покупки:</div>
+                <div class="result-val" id="hoursVal">0 часов</div>
+                <div class="result-desc" id="hoursDesc">Вам придется отработать столько часов своей жизни, просто чтобы оплатить эту вещь. Вы готовы отдать это время?</div>
+                
+                <div style="height: 1px; background: var(--border-color); margin: 20px 0;"></div>
+                
+                <div class="result-title">Упущенная выгода (через 10 лет):</div>
+                <div class="future-val" id="futureVal">0 ₽</div>
+                <div class="result-desc">Столько денег у вас было бы через 10 лет, если бы вы инвестировали эту сумму под скромные 15% годовых вместо покупки.</div>
+            </div>
+
+            <div class="info-block">
+                <div class="info-title">ℹ️ Как это работает?</div>
+                <div class="info-text">Мы переводим деньги в единственный невосполнимый ресурс — ваше время (из расчета 160 рабочих часов в месяц). Перед каждой крупной покупкой вбивайте сюда цифры. Если вещь действительно того стоит — покупайте. Если нет — инвестируйте.</div>
+            </div>
+        </div>
+        <div class="bottom-action">
+            <button class="btn-export" onclick="exportExcel()">Скачать разбор (Excel)</button>
+            <button class="save-btn" onclick="saveDataAndExit('index.html')">Отрезветь и выйти</button>
+        </div>
+    </div>
+
+    <script>
+        function calcXray() {
+            const price = parseFloat(document.getElementById('itemPrice').value) || 0;
+            const salary = parseFloat(document.getElementById('salary').value) || 0;
+            const hoursVal = document.getElementById('hoursVal');
+            const futureVal = document.getElementById('futureVal');
+
+            if (price > 0 && salary > 0) {
+                const hourlyWage = salary / 160; // 160 рабочих часов в месяц
+                const hoursSpent = Math.ceil(price / hourlyWage);
+                hoursVal.textContent = hoursSpent + ' часов';
+
+                // Сложный процент: FV = PV * (1 + r)^n
+                const future = price * Math.pow(1.15, 10);
+                futureVal.textContent = Math.round(future).toLocaleString('ru-RU') + ' ₽';
+            } else {
+                hoursVal.textContent = '0 часов';
+                futureVal.textContent = '0 ₽';
+            }
+        }
+
+        async function exportExcel() {
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Рентген');
+            ws.columns = [{width: 40}, {width: 25}];
+            ws.addRow(['РЕНТГЕН ПОКУПКИ']).font = {bold: true};
+            ws.addRow(['Товар:', document.getElementById('itemName').value]);
+            ws.addRow(['Цена:', document.getElementById('itemPrice').value + ' ₽']);
+            ws.addRow(['Потрачено часов жизни:', document.getElementById('hoursVal').textContent]);
+            ws.addRow(['Упущенный капитал через 10 лет:', document.getElementById('futureVal').textContent]);
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Purchase_Xray.xlsx`; link.click();
+        }
+
+        const PAGE_KEY = 'xray_module';
+        function saveAllData() {
+            const data = {
+                name: document.getElementById('itemName').value,
+                price: document.getElementById('itemPrice').value,
+                salary: document.getElementById('salary').value
+            };
+            localStorage.setItem(PAGE_KEY, JSON.stringify(data));
+        }
+        function loadAllData() {
+            const saved = localStorage.getItem(PAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                document.getElementById('itemName').value = data.name || '';
+                document.getElementById('itemPrice').value = data.price || '';
+                document.getElementById('salary').value = data.salary || '';
+                calcXray();
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadAllData);
+        function saveDataAndExit(url) { saveAllData(); window.location.href = url; }
+    </script>
+</body>
+</html>

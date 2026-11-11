@@ -1,0 +1,401 @@
+<button class="back-btn" onclick="window.location.href='index.html'">←</button>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дневник инсайтов | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #000000;
+            --surface: #171717;
+            --surface-hover: #262626;
+            --gold-primary: #d4af37;
+            --gold-light: #fde08b;
+            --text-main: #ffffff;
+            --text-muted: #a3a3a3;
+            --border-color: #333333;
+            --danger: #e57373;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .header { text-align: center; margin-bottom: 10px; }
+        
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: var(--gold-light);
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .info-panel {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 30px;
+            border-left: 3px solid var(--gold-primary);
+            border-top: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-panel p { color: var(--text-muted); font-size: 0.95rem; }
+        .info-panel strong { color: var(--text-main); font-weight: 500; }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard { grid-template-columns: 1fr; }
+        }
+
+        /* Форма добавления */
+        .editor-panel {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            position: sticky;
+            top: 20px;
+        }
+
+        .editor-panel h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            color: var(--gold-primary);
+            margin-bottom: 20px;
+        }
+
+        .input-group { margin-bottom: 20px; }
+        .input-group label {
+            display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;
+        }
+        
+        select, textarea {
+            width: 100%;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            padding: 12px 15px;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        select { cursor: pointer; appearance: none; }
+        textarea { resize: vertical; min-height: 150px; line-height: 1.5; }
+
+        select:focus, textarea:focus {
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 5px rgba(212, 175, 55, 0.2);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-light));
+            color: #000;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        
+        .btn-save:active { transform: scale(0.98); }
+        .btn-save:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
+
+        /* Лента инсайтов */
+        .feed-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .empty-state {
+            background: rgba(23, 23, 23, 0.5);
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 50px 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .insight-card {
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            position: relative;
+            animation: slideIn 0.4s ease;
+            transition: border-color 0.3s;
+        }
+
+        .insight-card:hover { border-color: rgba(212, 175, 55, 0.3); }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-meta { display: flex; align-items: center; gap: 12px; }
+        
+        .card-module {
+            background: rgba(212, 175, 55, 0.1);
+            color: var(--gold-light);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .card-date { font-size: 0.85rem; color: var(--text-muted); }
+
+        .btn-delete {
+            background: none; border: none; color: var(--border-color);
+            font-size: 1.2rem; cursor: pointer; transition: color 0.2s;
+        }
+        .insight-card:hover .btn-delete { color: var(--text-muted); }
+        .btn-delete:hover { color: var(--danger) !important; }
+
+        .card-text {
+            font-size: 1rem;
+            color: var(--text-main);
+            line-height: 1.7;
+            white-space: pre-wrap; /* Сохраняет переносы строк */
+        }
+        .card-text::before {
+            content: '«'; font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--gold-primary); margin-right: 4px;
+        }
+        .card-text::after {
+            content: '»'; font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--gold-primary); margin-left: 4px;
+        }
+/* Стили кнопки PDF (если их еще нет в файле) */
+        .btn-pdf { width: 100%; padding: 14px; border-radius: 12px; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 10px; }
+
+        /* ИДЕАЛЬНАЯ ПЕЧАТЬ И PDF */
+        @media print {
+            body, .mobile-container { background: #fff !important; color: #000 !important; max-width: 100% !important; margin: 0 !important; }
+            /* Прячем шапку, кнопки навигации и нижнюю панель с кнопками */
+            .header, .bottom-action, .back-btn, .btn-pdf, .btn-export { display: none !important; }
+            
+            /* Делаем все карточки, текстовые поля и блоки белыми с серой рамкой */
+            div, input, textarea, select { 
+                background: #fff !important; 
+                color: #000 !important; 
+                border-color: #ccc !important; 
+            }
+            
+            /* Запрещаем разрывать карточки на две страницы */
+            .card, .input-group, .result-box, .chart-container, .slider-card { 
+                page-break-inside: avoid !important; 
+                border: 1px solid #ccc !important;
+                margin-bottom: 15px !important;
+            }
+            
+            /* Заголовки делаем черными */
+            h1, h2, h3, span, label { color: #000 !important; }
+            
+            /* Если есть графики, даем им отступ */
+            canvas { min-height: 300px !important; max-width: 100% !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="header">
+            <h1>Дневник инсайтов</h1>
+            <div class="subtitle">Деньги в порядке • Рефлексия</div>
+        </div>
+
+        <div class="info-panel">
+            <p><strong>Трансформация начинается с осознания.</strong> Пассивное прослушивание курса дает лишь 10% результата. Фиксация инсайта закрепляет новые нейронные связи. Записывайте сюда свои главные озарения, изменения в мышлении и конкретные решения после каждого урока.</p>
+        </div>
+
+        <div class="dashboard">
+            
+            <!-- Форма -->
+            <div class="editor-panel">
+                <h2>Новая запись</h2>
+                
+                <div class="input-group">
+                    <label>Источник инсайта</label>
+                    <select id="insight-module">
+                        <option value="Свободная мысль">Свободная мысль</option>
+                        <option value="Неделя 1. Цели">Неделя 1. Цели</option>
+                        <option value="Неделя 2. Бюджет">Неделя 2. Бюджет</option>
+                        <option value="Неделя 3. Безопасность">Неделя 3. Безопасность</option>
+                        <option value="Неделя 4. Ресурсы">Неделя 4. Ресурсы</option>
+                        <option value="Неделя 5. Капитал">Неделя 5. Капитал</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Ваша мысль или решение</label>
+                    <textarea id="insight-text" placeholder="Мой главный инсайт сегодня... Я понял(а), что... Теперь я планирую..."></textarea>
+                </div>
+<div class="bottom-action">
+            <!-- Вставляем эту новую кнопку -->
+            <button class="btn-pdf" onclick="window.print()">📥 Сохранить в PDF</button>
+                <button class="btn-save" id="btn-save" onclick="saveInsight()" disabled>Сохранить инсайт</button>
+            </div>
+
+            <!-- Лента -->
+            <div class="feed-panel" id="feed-container">
+                <!-- Записи генерируются через JS -->
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'financeInsightsData';
+        const textInput = document.getElementById('insight-text');
+        const moduleSelect = document.getElementById('insight-module');
+        const saveBtn = document.getElementById('btn-save');
+        const feedContainer = document.getElementById('feed-container');
+
+        // Загрузка данных из памяти
+        let insights = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+        // Активация кнопки при вводе текста
+        textInput.addEventListener('input', () => {
+            saveBtn.disabled = textInput.value.trim().length === 0;
+        });
+
+        // Функция сохранения
+        function saveInsight() {
+            const text = textInput.value.trim();
+            if (!text) return;
+
+            const newInsight = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+                module: moduleSelect.value,
+                text: text
+            };
+
+            // Добавляем в начало массива
+            insights.unshift(newInsight);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(insights));
+
+            // Очищаем форму
+            textInput.value = '';
+            saveBtn.disabled = true;
+
+            // Перерисовываем ленту
+            renderFeed();
+        }
+
+        // Функция удаления
+        function deleteInsight(id) {
+            if (confirm('Удалить эту запись навсегда?')) {
+                insights = insights.filter(item => item.id !== id);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(insights));
+                renderFeed();
+            }
+        }
+
+        // Отрисовка ленты
+        function renderFeed() {
+            feedContainer.innerHTML = '';
+
+            if (insights.length === 0) {
+                feedContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">✎</div>
+                        Здесь будет храниться история вашей финансовой трансформации.<br>Добавьте свой первый инсайт!
+                    </div>
+                `;
+                return;
+            }
+
+            insights.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'insight-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-meta">
+                            <span class="card-module">${item.module}</span>
+                            <span class="card-date">${item.date}</span>
+                        </div>
+                        <button class="btn-delete" title="Удалить запись" onclick="deleteInsight(${item.id})">×</button>
+                    </div>
+                    <div class="card-text">${escapeHTML(item.text)}</div>
+                `;
+                feedContainer.appendChild(card);
+            });
+        }
+
+        // Защита от XSS (на всякий случай)
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag])
+            );
+        }
+
+        // Первичная отрисовка
+        renderFeed();
+    </script>
+</body>
+</html>

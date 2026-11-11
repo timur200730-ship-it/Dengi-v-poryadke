@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рабочая тетрадь 1 | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #000000;
+            --surface: #171717;
+            --gold-primary: #d4af37;
+            --gold-light: #fde08b;
+            --text-main: #ffffff;
+            --text-muted: #a3a3a3;
+            --border-color: #333333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif; background-color: var(--bg-dark);
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; color: var(--text-main);
+        }
+
+        .mobile-container {
+            width: 100%; max-width: 450px; min-height: 100vh;
+            background-color: var(--bg-dark); display: flex; flex-direction: column;
+        }
+
+        .header {
+            padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex;
+            justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10;
+        }
+
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .content-area { flex: 1; overflow-y: auto; padding: 20px; }
+        
+        .section-title {
+            font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold-primary);
+            margin-bottom: 15px; display: flex; align-items: center; gap: 10px;
+        }
+        
+        .section-title span {
+            background: rgba(212, 175, 55, 0.1); color: var(--gold-light); width: 24px; height: 24px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-family: 'Inter', sans-serif;
+        }
+
+        .goal-card {
+            background: var(--surface); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 20px; margin-bottom: 20px;
+        }
+
+        .text-label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 8px; }
+        .text-input {
+            width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 12px 15px; color: var(--text-main); font-family: 'Inter', sans-serif;
+            font-size: 14px; outline: none; transition: border-color 0.3s; margin-bottom: 15px;
+        }
+        .text-input:focus { border-color: var(--gold-primary); }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-2 .text-input { margin-bottom: 0; }
+
+        .inflation-box {
+            background: rgba(212, 175, 55, 0.05); border: 1px dashed rgba(212, 175, 55, 0.3);
+            border-radius: 8px; padding: 15px; margin-top: 15px; text-align: center;
+        }
+        .inflation-box p { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+        .inflation-val { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--gold-primary); font-weight: 600; }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .save-btn {
+            width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light));
+            border: none; color: #000; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s;
+        }
+        .save-btn:active { transform: scale(0.98); }
+        .btn-export {
+            width: 100%; padding: 16px; border-radius: 12px; background: transparent; border: 1px solid var(--gold-primary);
+            color: var(--gold-light); font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; gap: 8px; transition: all 0.2s;
+        }
+    /* Стили кнопки PDF (если их еще нет в файле) */
+        .btn-pdf { width: 100%; padding: 14px; border-radius: 12px; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 10px; }
+
+        /* ИДЕАЛЬНАЯ ПЕЧАТЬ И PDF */
+        @media print {
+            body, .mobile-container { background: #fff !important; color: #000 !important; max-width: 100% !important; margin: 0 !important; }
+            /* Прячем шапку, кнопки навигации и нижнюю панель с кнопками */
+            .header, .bottom-action, .back-btn, .btn-pdf, .btn-export { display: none !important; }
+            
+            /* Делаем все карточки, текстовые поля и блоки белыми с серой рамкой */
+            div, input, textarea, select { 
+                background: #fff !important; 
+                color: #000 !important; 
+                border-color: #ccc !important; 
+            }
+            
+            /* Запрещаем разрывать карточки на две страницы */
+            .card, .input-group, .result-box, .chart-container, .slider-card { 
+                page-break-inside: avoid !important; 
+                border: 1px solid #ccc !important;
+                margin-bottom: 15px !important;
+            }
+            
+            /* Заголовки делаем черными */
+            h1, h2, h3, span, label { color: #000 !important; }
+            
+            /* Если есть графики, даем им отступ */
+            canvas { min-height: 300px !important; max-width: 100% !important; }
+        }
+	</style>
+</head>
+<body>
+
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="saveDataAndExit('index.html')">←</button>
+            <div class="header-title">
+                <h1>Оцифровка целей</h1>
+                <p>Рабочая тетрадь • Шаг 1</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content-area">
+            
+            <h3 class="section-title"><span>1</span> Налог на мечту</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Введите стоимость вашей цели сегодня и срок. Калькулятор заложит инфляцию (8% в год).</p>
+
+            <div id="goalsContainer">
+                <div class="goal-card">
+                    <label class="text-label">Моя финансовая цель</label>
+                    <input type="text" class="text-input" placeholder="Например: Покупка автомобиля">
+                    
+                    <div class="grid-2" style="margin-top: 5px;">
+                        <div>
+                            <label class="text-label">Цена сейчас (₽)</label>
+                            <input type="number" class="text-input goal-price" placeholder="0" oninput="calcInflation()">
+                        </div>
+                        <div>
+                            <label class="text-label">Через сколько лет?</label>
+                            <input type="number" class="text-input goal-years" placeholder="0" oninput="calcInflation()">
+                        </div>
+                    </div>
+
+                    <div class="inflation-box">
+                        <p>Реальная стоимость с учетом инфляции:</p>
+                        <div class="inflation-val" id="inflation-result">0 ₽</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="section-title" style="margin-top: 30px;"><span>2</span> Проверка на истинность</h3>
+            <div class="goal-card">
+                <label class="text-label">Почему эта цель важна для меня именно сейчас?</label>
+                <textarea class="text-input" style="min-height: 80px; resize: vertical;" placeholder="Напишите искренний ответ..."></textarea>
+                
+                <label class="text-label">Что произойдет, если я НЕ достигну этой цели?</label>
+                <textarea class="text-input" style="min-height: 80px; resize: vertical; margin-bottom: 0;" placeholder="Мои риски..."></textarea>
+            </div>
+
+        </div>
+<div class="bottom-action">
+            <!-- Вставляем эту новую кнопку -->
+            <button class="btn-pdf" onclick="window.print()">📥 Сохранить в PDF</button>
+        <div class="bottom-action">
+            <button class="btn-export" id="exportBtn" onclick="exportExcel()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Скачать таблицу (Excel)
+            </button>
+            <button class="save-btn" onclick="saveDataAndExit('lesson1.html')">Сохранить и выйти</button>
+        </div>
+    </div>
+
+    <script>
+        function calcInflation() {
+            const priceInput = document.querySelector('.goal-price').value;
+            const yearsInput = document.querySelector('.goal-years').value;
+            const resultBox = document.getElementById('inflation-result');
+
+            const price = parseFloat(priceInput) || 0;
+            const years = parseInt(yearsInput) || 0;
+            const inflationRate = 0.08; 
+
+            if (price > 0 && years > 0) {
+                const futurePrice = price * Math.pow((1 + inflationRate), years);
+                resultBox.textContent = Math.round(futurePrice).toLocaleString('ru-RU') + ' ₽';
+            } else {
+                resultBox.textContent = '0 ₽';
+            }
+        }
+
+        async function exportExcel() {
+            const btn = document.getElementById('exportBtn');
+            const origText = btn.innerHTML;
+            btn.innerHTML = 'Формирование...'; btn.disabled = true;
+            try {
+                const wb = new ExcelJS.Workbook();
+                const ws = wb.addWorksheet('Оцифровка целей');
+                ws.columns = [{width: 30}, {width: 20}, {width: 15}, {width: 25}];
+
+                ws.addRow(['ОЦИФРОВКА ЦЕЛЕЙ И ИНФЛЯЦИЯ']).font = {bold: true, size: 14};
+                ws.addRow([]);
+                ws.addRow(['Цель', 'Цена сейчас (₽)', 'Срок (лет)', 'Цена с инфляцией (₽)']).font = {bold: true};
+                
+                const goalName = document.querySelector('.text-input').value || 'Без названия';
+                const price = parseFloat(document.querySelector('.goal-price').value) || 0;
+                const years = parseInt(document.querySelector('.goal-years').value) || 0;
+                const inflated = parseFloat(document.getElementById('inflation-result').textContent.replace(/[^\d.-]/g, '')) || 0;
+
+                ws.addRow([goalName, price, years, inflated]);
+                ws.addRow([]);
+                ws.addRow(['Проверка на истинность:']).font = {bold: true};
+                
+                const textareas = document.querySelectorAll('textarea');
+                ws.addRow(['Почему важна:', textareas[0].value]);
+                ws.addRow(['Риски невыполнения:', textareas[1].value]);
+
+                const buffer = await wb.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Celi_Workbook1.xlsx`; link.click();
+            } finally { btn.innerHTML = origText; btn.disabled = false; }
+        }
+
+        // === УНИВЕРСАЛЬНЫЙ СКРИПТ СОХРАНЕНИЯ ДАННЫХ ===
+        const PAGE_KEY = window.location.pathname.split('/').pop() || document.title;
+
+        function saveAllData() {
+            const inputs = document.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                if (input.type === 'checkbox') {
+                    if (input.checked) input.setAttribute('checked', 'checked');
+                    else input.removeAttribute('checked');
+                } else if (input.tagName === 'TEXTAREA') {
+                    input.textContent = input.value;
+                } else {
+                    input.setAttribute('value', input.value);
+                }
+            });
+            const contentArea = document.querySelector('.content-area') || document.querySelector('.content');
+            if (contentArea) localStorage.setItem('saved_html_' + PAGE_KEY, contentArea.innerHTML);
+        }
+
+        function loadAllData() {
+            const savedHtml = localStorage.getItem('saved_html_' + PAGE_KEY);
+            const contentArea = document.querySelector('.content-area') || document.querySelector('.content');
+            if (savedHtml && contentArea) {
+                contentArea.innerHTML = savedHtml;
+                if(typeof calcInflation === 'function') calcInflation();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAllData);
+
+        function saveDataAndExit(redirectUrl) {
+            saveAllData();
+            const btn = document.querySelector('.save-btn');
+            if(btn) {
+                btn.style.background = '#4caf50'; 
+                btn.style.color = '#fff';
+                btn.textContent = '✓ Успешно сохранено!';
+            }
+            setTimeout(() => { window.location.href = redirectUrl; }, 600);
+        }
+    </script>
+</body>
+</html>

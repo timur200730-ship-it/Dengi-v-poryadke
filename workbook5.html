@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный финансовый план | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --success: #4caf50; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        .section-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold-light); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        
+        .intro-box { background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 25px; }
+        .intro-title { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--gold-primary); margin-bottom: 10px; }
+        .intro-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+        .wb-card { background: var(--surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .wb-label { font-size: 13px; color: var(--text-main); font-weight: 500; margin-bottom: 8px; display: block; line-height: 1.4; }
+        .wb-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.3; }
+        
+        .wb-input, .wb-textarea { width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13px; outline: none; transition: 0.3s; margin-bottom: 12px; }
+        .wb-textarea { resize: vertical; min-height: 70px; line-height: 1.4; }
+        .wb-input:focus, .wb-textarea:focus { border-color: var(--gold-primary); }
+
+        .checkbox-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 10px; }
+        .checkbox-label { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); cursor: pointer; background: var(--bg-dark); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .checkbox-label input { accent-color: var(--gold-primary); width: 16px; height: 16px; cursor: pointer; }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .btn-export { width: 100%; padding: 14px; border-radius: 12px; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-pdf { width: 100%; padding: 14px; border-radius: 12px; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .save-btn { width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .save-btn:active, .btn-export:active, .btn-pdf:active { transform: scale(0.98); }
+
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            .mobile-container { max-width: 100% !important; box-shadow: none !important; }
+            .header, .bottom-action, .back-btn { display: none !important; }
+            .wb-card, .intro-box { background: #fff !important; border: 1px solid #ccc !important; color: #000 !important; }
+            .wb-input, .wb-textarea { background: #f9f9f9 !important; border: 1px solid #ccc !important; color: #000 !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='index.html'">←</button>
+            <div class="header-title">
+                <h1>Итоговый документ</h1>
+                <p>Личный Финансовый План</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content">
+            <div class="intro-box">
+                <div class="intro-title">📖 Ваш Личный Финансовый План (ЛФП)</div>
+                <div class="intro-text">Этот документ резмирует результаты всего марафона. Сведите ключевые цифры и решения в единую стратегию управления капиталом.</div>
+            </div>
+
+            <!-- Блок 1: Точка А и Точка Б -->
+            <h2 class="section-title">1. Капитал и горизонт (Точка А и Б)</h2>
+            <div class="wb-card">
+                <input type="number" class="wb-input" id="lfp_networth" placeholder="Текущий чистый капитал (Net Worth) в ₽">
+                <input type="number" class="wb-input" id="lfp_target_capital" placeholder="Целевой капитал через 5-10 лет в ₽">
+                <input type="text" class="wb-input" id="lfp_passive" placeholder="Желаемый пассивный доход в месяц (₽)">
+            </div>
+
+            <!-- Блок 2: Безопасность -->
+            <h2 class="section-title">2. Фундамент безопасности</h2>
+            <div class="wb-card">
+                <label class="wb-label">Статус вашей подушки безопасности:</label>
+                <div class="checkbox-grid">
+                    <label class="checkbox-label"><input type="checkbox" class="lfp-chk"> Подушка сформирована на 3 месяца</label>
+                    <label class="checkbox-label"><input type="checkbox" class="lfp-chk"> Подушка сформирована на 6+ месяцев</label>
+                    <label class="checkbox-label"><input type="checkbox" class="lfp-chk"> Долги ликвидированы / составлен график «Лавины»</label>
+                </div>
+                <textarea class="wb-textarea" id="lfp_safety_notes" placeholder="Комментарии по страховке и защите капитала..." style="margin-top: 10px;"></textarea>
+            </div>
+
+            <!-- Блок 3: Инвестиционный профиль -->
+            <h2 class="section-title">3. Инвестиционная стратегия</h2>
+            <div class="wb-card">
+                <label class="wb-label">Выберите ваш профиль риска и основные инструменты:</label>
+                <textarea class="wb-textarea" id="lfp_strategy" placeholder="Например: Умеренный профиль. Инструменты: облигации федерального займа, индексные фонды акций, накопительные счета..."></textarea>
+            </div>
+
+            <!-- Блок 4: Финансовый календарь -->
+            <h2 class="section-title">4. Финансовый календарь на год</h2>
+            <div class="wb-card">
+                <label class="wb-label">Пропишите 3 главных шага на ближайшие 12 месяцев:</label>
+                <textarea class="wb-textarea" id="lfp_calendar" placeholder="1. Закрыть остаток по кредитке до лета. 2. Оформить налоговый вычет за прошлый год. 3. Открыть ИИС..."></textarea>
+            </div>
+
+            <!-- Блок 5: Правила и привычки -->
+            <h2 class="section-title">5. Мои финансовые правила</h2>
+            <div class="wb-card">
+                <label class="wb-label">Главные принципы, которые вы пообещали себе соблюдать после марафона:</label>
+                <textarea class="wb-textarea" id="lfp_rules" placeholder="Например: Откладывать 20% сразу при получении зарплаты. Не брать потребительские кредиты на импульсы..."></textarea>
+            </div>
+
+        </div>
+
+        <div class="bottom-action">
+            <button class="btn-pdf" onclick="window.print()">📥 Сохранить в PDF (Печать ЛФП)</button>
+            <button class="btn-export" onclick="exportExcel()">Скачать план в Excel</button>
+            <button class="save-btn" onclick="saveAndExit()">Завершить марафон</button>
+        </div>
+    </div>
+
+    <script>
+        const PAGE_KEY = 'workbook5_data';
+
+        function saveAllData() {
+            const data = {
+                lfp_networth: document.getElementById('lfp_networth').value,
+                lfp_target_capital: document.getElementById('lfp_target_capital').value,
+                lfp_passive: document.getElementById('lfp_passive').value,
+                lfp_safety_notes: document.getElementById('lfp_safety_notes').value,
+                lfp_strategy: document.getElementById('lfp_strategy').value,
+                lfp_calendar: document.getElementById('lfp_calendar').value,
+                lfp_rules: document.getElementById('lfp_rules').value,
+                checkboxes: Array.from(document.querySelectorAll('.lfp-chk')).map(c => c.checked)
+            };
+            localStorage.setItem(PAGE_KEY, JSON.stringify(data));
+        }
+
+        function loadAllData() {
+            const saved = localStorage.getItem(PAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                document.getElementById('lfp_networth').value = data.lfp_networth || '';
+                document.getElementById('lfp_target_capital').value = data.lfp_target_capital || '';
+                document.getElementById('lfp_passive').value = data.lfp_passive || '';
+                document.getElementById('lfp_safety_notes').value = data.lfp_safety_notes || '';
+                document.getElementById('lfp_strategy').value = data.lfp_strategy || '';
+                document.getElementById('lfp_calendar').value = data.lfp_calendar || '';
+                document.getElementById('lfp_rules').value = data.lfp_rules || '';
+                
+                if(data.checkboxes) {
+                    const chks = document.querySelectorAll('.lfp-chk');
+                    data.checkboxes.forEach((val, i) => { if(chks[i]) chks[i].checked = val; });
+                }
+            }
+        }
+
+        async function exportExcel() {
+            saveAllData();
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Личный финансовый план');
+            ws.columns = [{width: 35}, {width: 45}];
+
+            ws.addRow(['ЛИЧНЫЙ ФИНАНСОВЫЙ ПЛАН (ИТОГ МАРАФОНА)']).font = {bold: true, size: 14, color: {argb: 'FFD4AF37'}};
+            ws.addRow([]);
+            ws.addRow(['Текущий чистый капитал (₽):', document.getElementById('lfp_networth'].value);
+            ws.addRow(['Целевой капитал через 5-10 лет (₽):', document.getElementById('lfp_target_capital').value]);
+            ws.addRow(['Желаемый пассивный доход (₽/мес):', document.getElementById('lfp_passive').value]);
+            ws.addRow(['Примечания по безопасности:', document.getElementById('lfp_safety_notes').value]);
+            ws.addRow(['Инвестиционная стратегия:', document.getElementById('lfp_strategy').value]);
+            ws.addRow(['Финансовый календарь:', document.getElementById('lfp_calendar').value]);
+            ws.addRow(['Финансовые правила:', document.getElementById('lfp_rules').value]);
+
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Personal_Financial_Plan.xlsx`; link.click();
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAllData);
+
+        function saveAndExit() {
+            saveAllData();
+            localStorage.setItem('module5_completed', 'true');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

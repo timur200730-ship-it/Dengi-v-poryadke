@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рабочая тетрадь: Урок 2 | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --success: #4caf50; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        .section-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold-light); margin-bottom: 15px; }
+        
+        .intro-box { background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 25px; }
+        .intro-title { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--gold-primary); margin-bottom: 10px; }
+        .intro-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+        .wb-card { background: var(--surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .wb-label { font-size: 13px; color: var(--text-main); font-weight: 500; margin-bottom: 8px; display: block; line-height: 1.4; }
+        
+        .wb-textarea { width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13px; outline: none; transition: 0.3s; margin-bottom: 12px; resize: vertical; min-height: 80px; line-height: 1.4; }
+        .wb-textarea:focus { border-color: var(--gold-primary); }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .btn-export { width: 100%; padding: 14px; border-radius: 12px; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-pdf { width: 100%; padding: 14px; border-radius: 12px; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .save-btn { width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            .mobile-container { max-width: 100% !important; box-shadow: none !important; }
+            .header, .bottom-action, .back-btn { display: none !important; }
+            .wb-card, .intro-box { background: #fff !important; border: 1px solid #ccc !important; color: #000 !important; }
+            .wb-textarea { background: #f9f9f9 !important; border: 1px solid #ccc !important; color: #000 !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='lesson2.html'">←</button>
+            <div class="header-title">
+                <h1>Рабочая тетрадь</h1>
+                <p>Урок 2. Бюджет</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content">
+            <div class="intro-box">
+                <div class="intro-title">📖 Практикум по бюджету</div>
+                <div class="intro-text">Зафиксируйте выбранный метод учета расходов и пропишите шаги по оптимизации привычек.</div>
+            </div>
+
+            <h2 class="section-title">1. Выбор метода бюджета</h2>
+            <div class="wb-card">
+                <label class="wb-label">Какой из методов вы выбрали для себя и почему?</label>
+                <textarea class="wb-textarea" id="b_method" placeholder="Опишите ваш выбор..."></textarea>
+            </div>
+
+            <h2 class="section-title">2. План борьбы с импульсивными покупками</h2>
+            <div class="wb-card">
+                <label class="wb-label">Какие правила вы внедряете, чтобы избежать спонтанных трат?</label>
+                <textarea class="wb-textarea" id="b_rules" placeholder="Например: правило 7 дней на раздумья..."></textarea>
+            </div>
+
+            <h2 class="section-title">3. Анализ кредитных обязательств</h2>
+            <div class="wb-card">
+                <label class="wb-label">Перечислите ваши текущие кредиты и карты:</label>
+                <textarea class="wb-textarea" id="b_credits" placeholder="1. Кредитка (30%) - дата платежа..."></textarea>
+            </div>
+        </div>
+
+        <div class="bottom-action">
+            <button class="btn-pdf" onclick="window.print()">📥 Сохранить в PDF (Печать)</button>
+            <button class="btn-export" onclick="exportExcel()">Скачать таблицу (Excel)</button>
+            <button class="save-btn" onclick="saveAndExit()">Сохранить и выйти</button>
+        </div>
+    </div>
+
+    <script>
+        const PAGE_KEY = 'workbook2_data';
+        function saveAllData() {
+            const data = {
+                b_method: document.getElementById('b_method').value,
+                b_rules: document.getElementById('b_rules').value,
+                b_credits: document.getElementById('b_credits').value
+            };
+            localStorage.setItem(PAGE_KEY, JSON.stringify(data));
+        }
+        function loadAllData() {
+            const saved = localStorage.getItem(PAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                document.getElementById('b_method').value = data.b_method || '';
+                document.getElementById('b_rules').value = data.b_rules || '';
+                document.getElementById('b_credits').value = data.b_credits || '';
+            }
+        }
+        async function exportExcel() {
+            saveAllData();
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Тетрадь Урок 2');
+            ws.columns = [{width: 35}, {width: 45}];
+            ws.addRow(['РАБОЧАЯ ТЕТРАДЬ: УРОК 2']).font = {bold: true, size: 14, color: {argb: 'FFD4AF37'}};
+            ws.addRow([]);
+            ws.addRow(['Выбранный метод:', document.getElementById('b_method').value]);
+            ws.addRow(['Правила против импульсов:', document.getElementById('b_rules').value]);
+            ws.addRow(['Анализ кредитов:', document.getElementById('b_credits').value]);
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Workbook_Lesson_2.xlsx`; link.click();
+        }
+        document.addEventListener('DOMContentLoaded', loadAllData);
+        function saveAndExit() { saveAllData(); window.location.href = 'lesson2.html'; }
+    </script>
+</body>
+</html>

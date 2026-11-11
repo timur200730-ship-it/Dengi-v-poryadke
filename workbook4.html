@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рабочая тетрадь: Урок 4 | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --success: #4caf50; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        .section-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold-light); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        
+        .intro-box { background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 25px; }
+        .intro-title { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--gold-primary); margin-bottom: 10px; }
+        .intro-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+        .intro-text ol { padding-left: 18px; margin-top: 8px; }
+        .intro-text li { margin-bottom: 6px; }
+
+        .wb-card { background: var(--surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .wb-label { font-size: 13px; color: var(--text-main); font-weight: 500; margin-bottom: 8px; display: block; line-height: 1.4; }
+        .wb-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.3; }
+        
+        .wb-input, .wb-textarea { width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13px; outline: none; transition: 0.3s; margin-bottom: 12px; }
+        .wb-textarea { resize: vertical; min-height: 80px; line-height: 1.4; }
+        .wb-input:focus, .wb-textarea:focus { border-color: var(--gold-primary); }
+
+        .checkbox-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 10px; }
+        .checkbox-label { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); cursor: pointer; background: var(--bg-dark); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .checkbox-label input { accent-color: var(--gold-primary); width: 16px; height: 16px; cursor: pointer; }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .btn-export { width: 100%; padding: 14px; border-radius: 12px; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-pdf { width: 100%; padding: 14px; border-radius: 12px; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .save-btn { width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .save-btn:active, .btn-export:active, .btn-pdf:active { transform: scale(0.98); }
+
+        /* Стили для генерации PDF через печать */
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            .mobile-container { max-width: 100% !important; box-shadow: none !important; }
+            .header, .bottom-action, .back-btn { display: none !important; }
+            .wb-card, .intro-box { background: #fff !important; border: 1px solid #ccc !important; color: #000 !important; }
+            .wb-input, .wb-textarea { background: #f9f9f9 !important; border: 1px solid #ccc !important; color: #000 !important; }
+            .wb-label, .section-title, .intro-title { color: #000 !important; }
+            .wb-text, .intro-text, .wb-sub { color: #333 !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container" id="pdfArea">
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='lesson4.html'">←</button>
+            <div class="header-title">
+                <h1>Рабочая тетрадь</h1>
+                <p>Урок 4. Оптимизация и резервы</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content">
+            
+            <div class="intro-box">
+                <div class="intro-title">📖 Практикум по поиску скрытых денег</div>
+                <div class="intro-text">
+                    Этот инструмент поможет вам пошагово найти скрытые резервы в вашем бюджете, рассчитать потенциальный возврат от государства и провести ревизию ненужных вещей.
+                </div>
+            </div>
+
+            <!-- Шаг 1: Налоговые вычеты -->
+            <h2 class="section-title">Шаг 1. Аудит налоговых вычетов</h2>
+            <div class="wb-card">
+                <label class="wb-label">Планируете ли вы подать на вычеты за последние 3 года?</label>
+                <div class="checkbox-grid">
+                    <label class="checkbox-label"><input type="checkbox" class="audit-chk"> Покупка недвижимости / ипотечные проценты</label>
+                    <label class="checkbox-label"><input type="checkbox" class="audit-chk"> Лечение, медикаменты или ДМС</label>
+                    <label class="checkbox-label"><input type="checkbox" class="audit-chk"> Обучение (свое, детей, курсы)</label>
+                    <label class="checkbox-label"><input type="checkbox" class="audit-chk"> Пополнение ИИС (Типа А)</label>
+                    <label class="checkbox-label"><input type="checkbox" class="audit-chk"> Физкультурно-оздоровительные услуги (спорт)</label>
+                </div>
+                <input type="number" class="wb-input" id="deductionSum" placeholder="Ориентировочная сумма к возврату (₽)" style="margin-top: 10px;">
+            </div>
+
+            <!-- Шаг 2: Подписки и обязательные платежи -->
+            <h2 class="section-title">Шаг 2. Ревизия подписок</h2>
+            <div class="wb-card">
+                <label class="wb-label">Какие подписки или сервисы можно отключить прямо сейчас?</label>
+                <textarea class="wb-textarea" id="subsAudit" placeholder="Например: Кинопоиск, Яндекс Плюс, музыкальные сервисы, старые тарифы связи..."></textarea>
+                <input type="number" class="wb-input" id="subsSaved" placeholder="Экономия в месяц после отключения (₽)">
+            </div>
+
+            <!-- Шаг 3: Расхламление -->
+            <h2 class="section-title">Шаг 3. Мертвый капитал (Авито-план)</h2>
+            <div class="wb-card">
+                <label class="wb-label">Перечислите 3 ненужные вещи, которые вы готовы выставить на продажу на этой неделе:</label>
+                <textarea class="wb-textarea" id="avitoPlan" placeholder="1. Старый планшет... 2. Спортивный инвентарь... 3. Брендовая одежда..."></textarea>
+                <input type="number" class="wb-input" id="avitoSum" placeholder="Ожидаемая сумма от продажи (₽)">
+            </div>
+
+            <!-- Шаг 4: Итог резервов -->
+            <h2 class="section-title">Шаг 4. Итоговый план пополнения копилки</h2>
+            <div class="wb-card">
+                <label class="wb-label">Опишите, куда вы направите высвобожденные за счет оптимизации деньги:</label>
+                <textarea class="wb-textarea" id="finalPlan" placeholder="Например: Всю сумму от вычета и продажи вещей отправлю на досрочное погашение кредитной карты..."></textarea>
+            </div>
+
+        </div>
+
+        <div class="bottom-action">
+            <button class="btn-pdf" onclick="window.print()">📥 Сохранить в PDF (Печать)</button>
+            <button class="btn-export" onclick="exportExcel()">Скачать таблицу (Excel)</button>
+            <button class="save-btn" onclick="saveAndExit()">Сохранить и выйти</button>
+        </div>
+    </div>
+
+    <script>
+        const PAGE_KEY = 'workbook4_data';
+
+        function saveAllData() {
+            const data = {
+                deductionSum: document.getElementById('deductionSum').value,
+                subsAudit: document.getElementById('subsAudit').value,
+                subsSaved: document.getElementById('subsSaved').value,
+                avitoPlan: document.getElementById('avitoPlan').value,
+                avitoSum: document.getElementById('avitoSum').value,
+                finalPlan: document.getElementById('finalPlan').value,
+                checkboxes: Array.from(document.querySelectorAll('.audit-chk')).map(c => c.checked)
+            };
+            localStorage.setItem(PAGE_KEY, JSON.stringify(data));
+        }
+
+        function loadAllData() {
+            const saved = localStorage.getItem(PAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                document.getElementById('deductionSum').value = data.deductionSum || '';
+                document.getElementById('subsAudit').value = data.subsAudit || '';
+                document.getElementById('subsSaved').value = data.subsSaved || '';
+                document.getElementById('avitoPlan').value = data.avitoPlan || '';
+                document.getElementById('avitoSum').value = data.avitoSum || '';
+                document.getElementById('finalPlan').value = data.finalPlan || '';
+                
+                if(data.checkboxes) {
+                    const chks = document.querySelectorAll('.audit-chk');
+                    data.checkboxes.forEach((val, i) => { if(chks[i]) chks[i].checked = val; });
+                }
+            }
+        }
+
+        async function exportExcel() {
+            saveAllData();
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Рабочая тетрадь Урок 4');
+            ws.columns = [{width: 35}, {width: 45}];
+
+            ws.addRow(['РАБОЧАЯ ТЕТРАДЬ: УРОК 4 (ОПТИМИЗАЦИЯ)']).font = {bold: true, size: 14, color: {argb: 'FFD4AF37'}};
+            ws.addRow([]);
+            ws.addRow(['Ожидаемый возврат вычетов (₽):', document.getElementById('deductionSum').value]);
+            ws.addRow(['Аудит подписок:', document.getElementById('subsAudit').value]);
+            ws.addRow(['Экономия от подписок (₽/мес):', document.getElementById('subsSaved').value]);
+            ws.addRow(['План по Авито (расхламление):', document.getElementById('avitoPlan').value]);
+            ws.addRow(['Ожидаемый кэш от продажи (₽):', document.getElementById('avitoSum').value]);
+            ws.addRow(['Итоговый план распределения:', document.getElementById('finalPlan').value]);
+
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Workbook_Lesson_4.xlsx`; link.click();
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAllData);
+
+        function saveAndExit() {
+            saveAllData();
+            const btn = document.querySelector('.save-btn');
+            btn.style.background = 'var(--success)';
+            btn.textContent = '✓ Сохранено!';
+            setTimeout(() => { window.location.href = 'lesson4.html'; }, 600);
+        }
+    </script>
+</body>
+</html>

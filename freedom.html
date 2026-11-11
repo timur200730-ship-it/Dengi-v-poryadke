@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта Свободы | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --success: #4caf50; --danger: #e57373; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        .section-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; margin-top: 25px;}
+        .section-title:first-child { margin-top: 0; }
+
+        /* Поля ввода */
+        .calc-card { background: var(--surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .input-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .input-row:last-child { margin-bottom: 0; }
+        .input-row label { font-size: 13px; color: var(--text-muted); flex: 1; padding-right: 10px; line-height: 1.3; }
+        .input-wrapper { position: relative; width: 130px; }
+        .input-wrapper input { width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 25px 12px 10px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; text-align: right; outline: none; transition: 0.3s; }
+        .input-wrapper input:focus { border-color: var(--gold-primary); }
+        .input-wrapper span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px; }
+
+        /* Уровни */
+        .level-card { background: var(--surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 10px; position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center;}
+        .level-card::before { content: ''; position: absolute; left: 0; top: 0; width: 4px; height: 100%; background: #333; }
+        .level-card.target::before { background: var(--gold-primary); }
+        .level-info { flex: 1; padding-left: 10px; }
+        .level-title { font-size: 10px; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 4px; }
+        .level-name { font-size: 14px; color: var(--text-main); font-weight: 500; }
+        .level-val { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: var(--gold-light); text-align: right; }
+
+        /* Дашборд времени */
+        .time-dashboard { background: linear-gradient(145deg, #111, var(--surface)); border: 1px dashed var(--gold-primary); border-radius: 16px; padding: 25px 20px; text-align: center; margin-bottom: 25px; }
+        .time-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .time-value { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 600; color: var(--success); line-height: 1.1; }
+        .time-error { font-size: 14px; color: var(--danger); line-height: 1.4; display: none; }
+
+        /* График */
+        .chart-container { background: var(--surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 15px; margin-bottom: 25px; position: relative; height: 260px; width: 100%; }
+        
+        /* Советы */
+        .tips-block { background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .tips-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .tips-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+        .tips-text ul { padding-left: 20px; margin-top: 10px; }
+        .tips-text li { margin-bottom: 8px; }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .btn-export { width: 100%; padding: 16px; border-radius: 12px; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .save-btn { width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .save-btn:active, .btn-export:active { transform: scale(0.98); }
+    /* Стили кнопки PDF (если их еще нет в файле) */
+        .btn-pdf { width: 100%; padding: 14px; border-radius: 12px; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 10px; }
+
+        /* ИДЕАЛЬНАЯ ПЕЧАТЬ И PDF */
+        @media print {
+            body, .mobile-container { background: #fff !important; color: #000 !important; max-width: 100% !important; margin: 0 !important; }
+            /* Прячем шапку, кнопки навигации и нижнюю панель с кнопками */
+            .header, .bottom-action, .back-btn, .btn-pdf, .btn-export { display: none !important; }
+            
+            /* Делаем все карточки, текстовые поля и блоки белыми с серой рамкой */
+            div, input, textarea, select { 
+                background: #fff !important; 
+                color: #000 !important; 
+                border-color: #ccc !important; 
+            }
+            
+            /* Запрещаем разрывать карточки на две страницы */
+            .card, .input-group, .result-box, .chart-container, .slider-card { 
+                page-break-inside: avoid !important; 
+                border: 1px solid #ccc !important;
+                margin-bottom: 15px !important;
+            }
+            
+            /* Заголовки делаем черными */
+            h1, h2, h3, span, label { color: #000 !important; }
+            
+            /* Если есть графики, даем им отступ */
+            canvas { min-height: 300px !important; max-width: 100% !important; }
+        }
+	</style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="saveDataAndExit('index.html')">←</button>
+            <div class="header-title">
+                <h1>Карта Свободы</h1>
+                <p>Навигатор капитала</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content">
+            
+            <h2 class="section-title">Шаг 1: Пункт назначения</h2>
+            <div class="calc-card" style="margin-bottom: 15px;">
+                <div class="input-row">
+                    <label>Желаемый пассивный доход в месяц (для нормальной жизни)</label>
+                    <div class="input-wrapper"><input type="number" id="monthlyExp" value="100000" oninput="calculateRoute()"><span>₽</span></div>
+                </div>
+            </div>
+
+            <div class="level-card">
+                <div class="level-info">
+                    <div class="level-title">Уровень 1</div>
+                    <div class="level-name">Безопасность (6 мес)</div>
+                </div>
+                <div class="level-val" id="lvl1-val">0 ₽</div>
+            </div>
+            <div class="level-card target">
+                <div class="level-info">
+                    <div class="level-title" style="color: var(--gold-light);">Ваша Главная Цель</div>
+                    <div class="level-name" style="color: var(--gold-primary);">Независимость (Пр. 4%)</div>
+                </div>
+                <div class="level-val" id="lvl2-val" style="color: var(--gold-primary);">0 ₽</div>
+            </div>
+
+            <h2 class="section-title">Шаг 2: Текущая скорость</h2>
+            <div class="calc-card">
+                <div class="input-row">
+                    <label>Текущий капитал (Уже накоплено)</label>
+                    <div class="input-wrapper"><input type="number" id="currentCap" value="0" oninput="calculateRoute()"><span>₽</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Ежемесячно откладываю (Свободная дельта)</label>
+                    <div class="input-wrapper"><input type="number" id="monthlyAdd" value="15000" oninput="calculateRoute()"><span>₽</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Средняя доходность портфеля</label>
+                    <div class="input-wrapper"><input type="number" id="yieldRate" value="15" oninput="calculateRoute()"><span>%</span></div>
+                </div>
+            </div>
+
+            <div class="time-dashboard">
+                <div class="time-label">До финансовой независимости:</div>
+                <div class="time-value" id="eta-val">Расчет...</div>
+                <div class="time-error" id="eta-error">С текущей дельтой цель недостижима. Увеличьте пополнения.</div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="freedomChart"></canvas>
+            </div>
+
+            <!-- Динамические советы -->
+            <div class="tips-block">
+                <div class="tips-title">💡 Как ускорить процесс?</div>
+                <div class="tips-text" id="dynamic-tips">
+                    <!-- Заполняется через JS -->
+                </div>
+            </div>
+
+        </div>
+<div class="bottom-action">
+            <!-- Вставляем эту новую кнопку -->
+            <button class="btn-pdf" onclick="window.print()">📥 Сохранить в PDF</button>
+        <div class="bottom-action">
+            <button class="btn-export" onclick="exportExcel()">Скачать маршрут (Excel)</button>
+            <button class="save-btn" onclick="saveDataAndExit('index.html')">Зафиксировать план</button>
+        </div>
+    </div>
+
+    <script>
+        let freedomChart;
+        Chart.defaults.color = '#a3a3a3';
+        Chart.defaults.font.family = "'Inter', sans-serif";
+
+        function initChart() {
+            const ctx = document.getElementById('freedomChart').getContext('2d');
+            freedomChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: [], datasets: [
+                    { label: 'Ваш Капитал', data: [], borderColor: '#d4af37', backgroundColor: 'rgba(212, 175, 55, 0.15)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0 },
+                    { label: 'Цель (Независимость)', data: [], borderColor: '#4caf50', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0, pointRadius: 0 }
+                ]},
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: { ticks: { callback: function(value) { return (value/1000000).toFixed(1) + 'M'; } }, grid: { color: '#333' } },
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } }
+                    },
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: {size: 11} } } }
+                }
+            });
+        }
+
+        function calculateRoute() {
+            const exp = parseFloat(document.getElementById('monthlyExp').value) || 0;
+            const currentCap = parseFloat(document.getElementById('currentCap').value) || 0;
+            const monthlyAdd = parseFloat(document.getElementById('monthlyAdd').value) || 0;
+            const rate = parseFloat(document.getElementById('yieldRate').value) || 0;
+
+            // Расчет целей
+            const lvl1 = exp * 6;
+            const targetCap = (exp * 12) * 25; // Правило 4% (Цель)
+            
+            document.getElementById('lvl1-val').textContent = lvl1.toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('lvl2-val').textContent = targetCap.toLocaleString('ru-RU') + ' ₽';
+
+            if(!freedomChart) return;
+
+            const etaVal = document.getElementById('eta-val');
+            const etaError = document.getElementById('eta-error');
+            const tips = document.getElementById('dynamic-tips');
+
+            // Защита от бесконечного цикла
+            if (currentCap >= targetCap) {
+                etaVal.style.display = 'block'; etaError.style.display = 'none';
+                etaVal.textContent = "Вы уже достигли цели!";
+                tips.innerHTML = "Поздравляем! Ваш капитал уже способен генерировать нужный пассивный доход. Главная задача сейчас — защита активов от инфляции и диверсификация.";
+                return;
+            }
+
+            if (monthlyAdd <= 0 && rate <= 0) {
+                etaVal.style.display = 'none'; etaError.style.display = 'block';
+                freedomChart.data.labels = []; freedomChart.update();
+                return;
+            }
+
+            // Симуляция пути
+            let capital = currentCap;
+            let months = 0;
+            const monthlyRate = rate / 100 / 12;
+            const maxMonths = 1200; // Ограничитель 100 лет
+            
+            const labels = [];
+            const capData = [];
+            const targetData = [];
+
+            labels.push('Старт');
+            capData.push(capital);
+            targetData.push(targetCap);
+
+            while (capital < targetCap && months < maxMonths) {
+                capital = (capital + monthlyAdd) * (1 + monthlyRate);
+                months++;
+                
+                // Записываем точки для графика каждый год
+                if (months % 12 === 0) {
+                    labels.push((months/12) + ' лет');
+                    capData.push(Math.round(capital));
+                    targetData.push(targetCap);
+                }
+            }
+
+            // Если вышли за предел (100 лет)
+            if (months >= maxMonths) {
+                etaVal.style.display = 'none'; etaError.style.display = 'block';
+                freedomChart.data.labels = []; freedomChart.update();
+                return;
+            }
+
+            // Успешный расчет
+            etaVal.style.display = 'block'; etaError.style.display = 'none';
+            const yearsTotal = Math.floor(months / 12);
+            const monthsLeft = months % 12;
+            
+            let timeText = '';
+            if (yearsTotal > 0) timeText += yearsTotal + ' лет ';
+            if (monthsLeft > 0) timeText += monthsLeft + ' мес';
+            etaVal.textContent = timeText;
+
+            // Обновляем график
+            // Добавляем финальную точку, если она не выпала на ровный год
+            if (months % 12 !== 0) {
+                labels.push('Финиш');
+                capData.push(Math.round(targetCap));
+                targetData.push(targetCap);
+            }
+
+            freedomChart.data.labels = labels;
+            freedomChart.data.datasets[0].data = capData;
+            freedomChart.data.datasets[1].data = targetData;
+            freedomChart.update();
+
+            // Динамические советы на основе времени
+            if (yearsTotal < 5) {
+                tips.innerHTML = `Отличный темп! Вы находитесь на финишной прямой.
+                <ul>
+                    <li>Сфокусируйтесь на защите капитала: переложите часть средств в более консервативные инструменты (облигации).</li>
+                    <li>Избегайте ненужных рисков, вам не нужно гнаться за сверхдоходностью.</li>
+                </ul>`;
+            } else if (yearsTotal >= 5 && yearsTotal <= 15) {
+                tips.innerHTML = `Реалистичный и здоровый план. Сложный процент уже работает на вас.
+                <ul>
+                    <li>Продолжайте системно пополнять портфель каждый месяц. Дисциплина важнее доходности.</li>
+                    <li>С ростом зарплаты старайтесь не увеличивать расходы (инфляция образа жизни), а направлять всю прибавку в инвестиции — это срежет вам еще 2-3 года.</li>
+                </ul>`;
+            } else {
+                tips.innerHTML = `Срок получился слишком большим. Капитал будет расти слишком долго. Чтобы ускорить процесс:
+                <ul>
+                    <li><strong>Увеличьте Дельту:</strong> Пересмотрите ваш "Месячный баланс". Найдите способы сократить расходы или найдите дополнительный источник дохода.</li>
+                    <li><strong>Оптимизируйте Цель:</strong> Действительно ли вам нужно ${exp.toLocaleString('ru-RU')} ₽ в месяц для начала? Возможно, на первом этапе хватит и меньшей суммы.</li>
+                    <li>Попробуйте увеличить сумму ежемесячного пополнения в калькуляторе хотя бы на 30% и посмотрите, как резко сократится срок на графике.</li>
+                </ul>`;
+            }
+        }
+
+        async function exportExcel() {
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Карта Свободы');
+            ws.columns = [{width: 35}, {width: 25}];
+
+            ws.addRow(['НАВИГАТОР СВОБОДЫ']).font = {bold: true, size: 14};
+            ws.addRow(['Желаемый пассивный доход (₽/мес):', document.getElementById('monthlyExp').value]);
+            ws.addRow(['Целевой капитал (Пр. 4%):', document.getElementById('lvl2-val').textContent]).font = {bold: true, color: {argb: 'FFD4AF37'}};
+            ws.addRow([]);
+            ws.addRow(['ТЕКУЩАЯ СИТУАЦИЯ']).font = {bold: true};
+            ws.addRow(['Уже накоплено (₽):', document.getElementById('currentCap').value]);
+            ws.addRow(['Откладываю в месяц (₽):', document.getElementById('monthlyAdd').value]);
+            ws.addRow(['Ожидаемая доходность (%):', document.getElementById('yieldRate').value]);
+            ws.addRow([]);
+            ws.addRow(['ВРЕМЯ ДО ЦЕЛИ:', document.getElementById('eta-val').textContent]).font = {bold: true, size: 12, color: {argb: 'FF4CAF50'}};
+
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Freedom_Map.xlsx`; link.click();
+        }
+
+        const PAGE_KEY = 'freedom_module_v2';
+        function saveAllData() {
+            const inputs = document.querySelectorAll('input[type="number"]');
+            let dataToSave = { numbers: Array.from(inputs).map(inp => inp.value) };
+            localStorage.setItem(PAGE_KEY, JSON.stringify(dataToSave));
+        }
+
+        function loadAllData() {
+            initChart();
+            const saved = localStorage.getItem(PAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                const inputs = document.querySelectorAll('input[type="number"]');
+                data.numbers.forEach((val, i) => { if(inputs[i]) inputs[i].value = val; });
+            }
+            calculateRoute();
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAllData);
+        function saveDataAndExit(url) { saveAllData(); window.location.href = url; }
+    </script>
+</body>
+</html>

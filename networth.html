@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор Net Worth | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --positive: #4caf50; --negative: #e57373; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        .content { padding: 20px; flex: 1; overflow-y: auto; }
+        .result-panel { background: var(--surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; text-align: center; margin-bottom: 25px; position: sticky; top: 0; z-index: 5; }
+        .result-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .result-value { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 600; color: var(--text-main); transition: color 0.3s; }
+        .result-desc { font-size: 12px; margin-top: 10px; color: var(--text-muted); }
+        .section-box { margin-bottom: 30px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+        .section-header h3 { font-size: 16px; color: var(--gold-primary); font-weight: 500; }
+        .section-sum { font-size: 14px; font-weight: 600; }
+        .input-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: var(--surface); padding: 12px 15px; border-radius: 8px; }
+        .input-row label { font-size: 14px; color: var(--text-main); flex: 1; }
+        .input-wrapper { position: relative; width: 140px; }
+        .input-wrapper input { width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 25px 8px 10px; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 14px; text-align: right; outline: none; }
+        .input-wrapper input:focus { border-color: var(--gold-primary); }
+        .input-wrapper span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px; }
+        .text-positive { color: var(--positive) !important; }
+        .text-negative { color: var(--negative) !important; }
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; margin: 0 -20px -20px -20px; }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="saveDataAndExit('index.html')">←</button>
+            <div class="header-title">
+                <h1>Калькулятор капитала</h1>
+                <p>Net Worth</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content">
+            <div class="result-panel">
+                <div class="result-title">Ваш чистый капитал</div>
+                <div class="result-value" id="net-worth-val">0 ₽</div>
+                <div class="result-desc" id="net-worth-desc">Заполните поля ниже, чтобы узнать правду.</div>
+            </div>
+
+            <!-- АКТИВЫ -->
+            <div class="section-box">
+                <div class="section-header">
+                    <h3>Активы (+)</h3>
+                    <div class="section-sum text-positive" id="assets-sum">0 ₽</div>
+                </div>
+                <div class="input-row">
+                    <label>Наличные и карты</label>
+                    <div class="input-wrapper"><input type="number" class="asset-input" placeholder="0" oninput="calculateNW()"><span>₽</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Вклады и депозиты</label>
+                    <div class="input-wrapper"><input type="number" class="asset-input" placeholder="0" oninput="calculateNW()"><span>₽</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Инвестиции (брокер)</label>
+                    <div class="input-wrapper"><input type="number" class="asset-input" placeholder="0" oninput="calculateNW()"><span>₽</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Недвижимость</label>
+                    <div class="input-wrapper"><input type="number" class="asset-input" placeholder="0" oninput="calculateNW()"><span>₽</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Автомобиль</label>
+                    <div class="input-wrapper"><input type="number" class="asset-input" placeholder="0" oninput="calculateNW()"><span>₽</span></div>
+                </div>
+            </div>
+
+            <!-- ПАССИВЫ -->
+            <div class="section-box">
+                <div class="section-header">
+                    <h3 style="color: var(--negative);">Пассивы (-)</h3>
+                    <div class="section-sum text-negative" id="liab-sum">0 ₽</div>
+                </div>
+                <div class="input-row">
+                    <label>Остаток по ипотеке</label>
+                    <div class="input-wrapper"><input type="number" class="liab-input" placeholder="0" oninput="calculateNW()"><span>₽</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Автокредит</label>
+                    <div class="input-wrapper"><input type="number" class="liab-input" placeholder="0" oninput="calculateNW()"><span>₽</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Потребительские</label>
+                    <div class="input-wrapper"><input type="number" class="liab-input" placeholder="0" oninput="calculateNW()"><span>₽</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Долги по кредиткам</label>
+                    <div class="input-wrapper"><input type="number" class="liab-input" placeholder="0" oninput="calculateNW()"><span>₽</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Долги физ. лицам</label>
+                    <div class="input-wrapper"><input type="number" class="liab-input" placeholder="0" oninput="calculateNW()"><span>₽</span></div>
+                </div>
+                
+                <!-- Блок кнопок внутри content -->
+                <!-- Вставьте это перед <div class="bottom-action"> (внутри блока Пассивов) -->
+            <div class="info-block" style="background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 20px; margin-top: 20px;">
+                <div style="font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-primary); margin-bottom: 12px;">ℹ️ Что означает эта цифра?</div>
+                <div style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                    Чистый капитал (Net Worth) — это единственный правдивый показатель вашего финансового здоровья. Ваш доход не имеет значения, если вы тратите всё под ноль.
+                    <ul style="padding-left: 20px; margin-top: 10px;">
+                        <li style="margin-bottom: 6px;"><strong>Активы:</strong> Пишите сюда только то, что можно продать или что приносит деньги. Ипотечная квартира — это актив (рыночная цена), но остаток долга по ней — это пассив.</li>
+                        <li style="margin-bottom: 6px;"><strong>Отрицательный капитал:</strong> Если цифра в минусе, значит технически вы банкрот. Первая цель — вывести Net Worth в ноль, агрессивно гася потребительские долги.</li>
+                    </ul>
+                </div>
+            </div><div class="bottom-action">
+                    <button class="btn-export" id="exportBtn" onclick="exportExcel()" style="background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-light); padding: 16px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Скачать расчет (Excel)
+                    </button>
+                    <button class="save-btn" onclick="saveDataAndExit('lesson1.html')" style="width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer;">Сохранить и выйти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calculateNW() {
+            let totalAssets = 0, totalLiabs = 0;
+
+            document.querySelectorAll('.asset-input').forEach(input => { totalAssets += parseFloat(input.value) || 0; });
+            document.querySelectorAll('.liab-input').forEach(input => { totalLiabs += parseFloat(input.value) || 0; });
+
+            const netWorth = totalAssets - totalLiabs;
+
+            document.getElementById('assets-sum').textContent = totalAssets.toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('liab-sum').textContent = totalLiabs.toLocaleString('ru-RU') + ' ₽';
+            
+            const nwVal = document.getElementById('net-worth-val');
+            const nwDesc = document.getElementById('net-worth-desc');
+            nwVal.textContent = netWorth.toLocaleString('ru-RU') + ' ₽';
+
+            if (netWorth < 0) {
+                nwVal.style.color = 'var(--negative)'; nwDesc.textContent = 'Вы живете в минус. Долги превышают стоимость имущества.';
+            } else if (netWorth > 0) {
+                nwVal.style.color = 'var(--positive)'; nwDesc.textContent = 'Отличный старт. Ваш капитал в плюсе.';
+                if (netWorth > 1000000) { nwVal.style.color = 'var(--gold-primary)'; nwDesc.textContent = 'Вы — миллионер в твердом капитале.'; }
+            } else {
+                nwVal.style.color = 'var(--text-main)'; nwDesc.textContent = 'Ноль. Вы находитесь в точке старта.';
+            }
+        }
+
+        async function exportExcel() {
+            const btn = document.getElementById('exportBtn');
+            const origText = btn.innerHTML;
+            btn.innerHTML = 'Формирование...'; btn.disabled = true;
+            try {
+                const wb = new ExcelJS.Workbook();
+                const ws = wb.addWorksheet('Net Worth');
+                ws.columns = [{width: 40}, {width: 20}];
+
+                ws.addRow(['ЛИЧНЫЙ КАПИТАЛ (NET WORTH)']).font = {bold: true, size: 14};
+                ws.addRow([]);
+
+                ws.addRow(['АКТИВЫ (+)', 'Сумма (₽)']).font = {bold: true, color: {argb: 'FF4CAF50'}};
+                const assetInputs = document.querySelectorAll('.asset-input');
+                const assetLabels = ['Наличные и карты', 'Вклады и депозиты', 'Инвестиции (брокер)', 'Недвижимость (рыночная)', 'Автомобиль (рыночная)'];
+                assetInputs.forEach((inp, idx) => { ws.addRow([assetLabels[idx], parseFloat(inp.value) || 0]); });
+                ws.addRow(['ИТОГО АКТИВЫ:', parseFloat(document.getElementById('assets-sum').textContent.replace(/[^\d.-]/g, ''))]).font = {bold: true};
+
+                ws.addRow([]);
+                ws.addRow(['ПАССИВЫ (-)', 'Сумма (₽)']).font = {bold: true, color: {argb: 'FFE57373'}};
+                const liabInputs = document.querySelectorAll('.liab-input');
+                const liabLabels = ['Остаток по ипотеке', 'Автокредит', 'Потребительские кредиты', 'Долги по кредиткам', 'Долги физ. лицам'];
+                liabInputs.forEach((inp, idx) => { ws.addRow([liabLabels[idx], parseFloat(inp.value) || 0]); });
+                ws.addRow(['ИТОГО ПАССИВЫ:', parseFloat(document.getElementById('liab-sum').textContent.replace(/[^\d.-]/g, ''))]).font = {bold: true};
+
+                ws.addRow([]);
+                ws.addRow(['ЧИСТЫЙ КАПИТАЛ (NET WORTH):', parseFloat(document.getElementById('net-worth-val').textContent.replace(/[^\d.-]/g, ''))]).font = {bold: true, color: {argb: 'FFD4AF37'}};
+
+                const buffer = await wb.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `NetWorth.xlsx`; link.click();
+            } finally { btn.innerHTML = origText; btn.disabled = false; }
+        }
+
+        // === УНИВЕРСАЛЬНЫЙ СКРИПТ СОХРАНЕНИЯ ДАННЫХ ===
+        const PAGE_KEY = window.location.pathname.split('/').pop() || document.title;
+
+        function saveAllData() {
+            const inputs = document.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                if (input.type === 'checkbox') {
+                    if (input.checked) input.setAttribute('checked', 'checked');
+                    else input.removeAttribute('checked');
+                } else if (input.tagName === 'TEXTAREA') {
+                    input.textContent = input.value;
+                } else {
+                    input.setAttribute('value', input.value);
+                }
+            });
+            const contentArea = document.querySelector('.content') || document.querySelector('.content-area');
+            if (contentArea) localStorage.setItem('saved_html_' + PAGE_KEY, contentArea.innerHTML);
+        }
+
+        function loadAllData() {
+            const savedHtml = localStorage.getItem('saved_html_' + PAGE_KEY);
+            const contentArea = document.querySelector('.content') || document.querySelector('.content-area');
+            if (savedHtml && contentArea) {
+                contentArea.innerHTML = savedHtml;
+                if(typeof calculateNW === 'function') calculateNW();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAllData);
+
+        function saveDataAndExit(redirectUrl) {
+            saveAllData();
+            const btn = document.querySelector('.save-btn');
+            if(btn) {
+                btn.style.background = '#4caf50'; 
+                btn.style.color = '#fff';
+                btn.textContent = '✓ Успешно сохранено!';
+            }
+            setTimeout(() => { window.location.href = redirectUrl; }, 600);
+        }
+    </script>
+</body>
+</html>

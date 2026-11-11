@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Вход | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-dark: #0a0a0a; 
+            --surface: #171717; 
+            --gold-primary: #d4af37; 
+            --gold-light: #fde08b; 
+            --text-main: #ffffff; 
+            --text-muted: #a3a3a3; 
+            --border-color: #333333; 
+            --error: #e57373; 
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-dark); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            color: var(--text-main); 
+            padding: 20px;
+        }
+
+        .auth-container { 
+            background: var(--surface); 
+            width: 100%; 
+            max-width: 400px; 
+            padding: 40px 30px; 
+            border-radius: 20px; 
+            border: 1px solid var(--border-color); 
+            text-align: center; 
+            box-shadow: 0 20px 50px rgba(212, 175, 55, 0.05); 
+        }
+
+        .logo { 
+            font-family: 'Playfair Display', serif; 
+            font-size: 28px; 
+            color: var(--gold-light); 
+            margin-bottom: 5px; 
+        }
+
+        .subtitle { 
+            font-size: 12px; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            margin-bottom: 30px; 
+        }
+
+        .input-group { 
+            margin-bottom: 15px; 
+            text-align: left; 
+        }
+
+        .input-group label { 
+            display: block; 
+            font-size: 13px; 
+            color: var(--text-muted); 
+            margin-bottom: 8px; 
+        }
+
+        .text-input { 
+            width: 100%; 
+            background: var(--bg-dark); 
+            border: 1px solid var(--border-color); 
+            padding: 14px 15px; 
+            border-radius: 10px; 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif; 
+            font-size: 15px; 
+            outline: none; 
+            transition: 0.3s; 
+        }
+
+        .text-input:focus { 
+            border-color: var(--gold-primary); 
+        }
+
+        .btn-primary { 
+            width: 100%; 
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); 
+            border: none; 
+            padding: 16px; 
+            border-radius: 10px; 
+            color: #000; 
+            font-family: 'Inter', sans-serif; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            margin-top: 10px; 
+            transition: transform 0.2s; 
+        }
+
+        .btn-primary:active { 
+            transform: scale(0.98); 
+        }
+
+        .toggle-link { 
+            margin-top: 25px; 
+            font-size: 13px; 
+            color: var(--text-muted); 
+            cursor: pointer; 
+            text-decoration: underline; 
+            text-underline-offset: 3px; 
+            transition: color 0.3s;
+        }
+
+        .toggle-link:hover { 
+            color: var(--gold-primary); 
+        }
+
+        .error-msg { 
+            color: var(--error); 
+            font-size: 13px; 
+            margin-top: 15px; 
+            display: none; 
+            background: rgba(229, 115, 115, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(229, 115, 115, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="logo">PROФинансы</div>
+        <div class="subtitle" id="mode-subtitle">Вход в систему</div>
+
+        <div class="input-group">
+            <label>Ваш Email</label>
+            <input type="email" id="email" class="text-input" placeholder="student@email.com">
+        </div>
+        <div class="input-group">
+            <label>Пароль</label>
+            <input type="password" id="password" class="text-input" placeholder="••••••••">
+        </div>
+
+        <div class="error-msg" id="error-msg">Ошибка авторизации</div>
+
+        <button class="btn-primary" id="auth-btn">Войти</button>
+        <div class="toggle-link" id="toggle-btn">Нет аккаунта? Создать новый</div>
+    </div>
+
+    <!-- Модули Firebase (Версия 10.8.1) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // Ваши реальные ключи конфигурации Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCber9hVJt50u2l_gCCy8YAzmJ4tcd3gJA",
+            authDomain: "profinancy-c6709.firebaseapp.com",
+            databaseURL: "https://profinancy-c6709-default-rtdb.firebaseio.com",
+            projectId: "profinancy-c6709",
+            storageBucket: "profinancy-c6709.firebasestorage.app",
+            messagingSenderId: "583520365222",
+            appId: "1:583520365222:web:bcce6adb7e3a3a97c42267"
+        };
+
+        // Инициализируем сервисы
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Переменные интерфейса
+        let isLoginMode = true;
+        const authBtn = document.getElementById('auth-btn');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const subtitle = document.getElementById('mode-subtitle');
+        const errorMsg = document.getElementById('error-msg');
+
+        // Логика переключения между Входом и Регистрацией
+        toggleBtn.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            if (isLoginMode) {
+                subtitle.textContent = 'Вход в систему';
+                authBtn.textContent = 'Войти';
+                toggleBtn.textContent = 'Нет аккаунта? Создать новый';
+            } else {
+                subtitle.textContent = 'Регистрация';
+                authBtn.textContent = 'Создать аккаунт';
+                toggleBtn.textContent = 'Уже есть аккаунт? Войти';
+            }
+            errorMsg.style.display = 'none';
+        });
+
+        // Главная функция авторизации
+        authBtn.addEventListener('click', async () => {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            errorMsg.style.display = 'none';
+
+            if (!email || !password) {
+                showError("Пожалуйста, заполните все поля.");
+                return;
+            }
+
+            authBtn.textContent = 'Обработка...';
+            authBtn.disabled = true;
+
+            try {
+                if (isLoginMode) {
+                    // ПРОЦЕСС ВХОДА (СКАЧИВАЕМ ДАННЫЕ ИЗ БАЗЫ)
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    await syncFromCloud(userCredential.user.uid); 
+                } else {
+                    // ПРОЦЕСС РЕГИСТРАЦИИ (ЗАЛИВАЕМ ЛОКАЛЬНЫЕ ДАННЫЕ В НОВУЮ БАЗУ)
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await syncToCloud(userCredential.user.uid); 
+                }
+                
+                // В случае успеха — перекидываем в Главное меню
+                window.location.href = 'index.html';
+
+            } catch (error) {
+                // Обработка ошибок (перевод на русский)
+                showError(translateError(error.code));
+                authBtn.textContent = isLoginMode ? 'Войти' : 'Создать аккаунт';
+                authBtn.disabled = false;
+            }
+        });
+
+        // Функция загрузки данных из облака в localStorage
+        async function syncFromCloud(uid) {
+            try {
+                const docRef = doc(db, "users_data", uid);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data().localData;
+                    if(cloudData) {
+                        const parsed = JSON.parse(cloudData);
+                        // Полностью обновляем память телефона/браузера
+                        for (let key in parsed) {
+                            localStorage.setItem(key, parsed[key]);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Ошибка загрузки данных:", e);
+            }
+        }
+
+        // Функция выгрузки данных из localStorage в облако при регистрации
+        async function syncToCloud(uid) {
+            try {
+                const allLocalData = JSON.stringify(localStorage);
+                await setDoc(doc(db, "users_data", uid), {
+                    localData: allLocalData,
+                    lastSync: new Date().toISOString()
+                });
+            } catch (e) {
+                console.error("Ошибка выгрузки данных:", e);
+            }
+        }
+
+        // Показ сообщений об ошибках
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.style.display = 'block';
+        }
+
+        // Словарь ошибок Firebase (перевод на человеческий русский)
+        function translateError(code) {
+            if(code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
+                return 'Неверный email или пароль.';
+            }
+            if(code === 'auth/email-already-in-use') {
+                return 'Пользователь с таким email уже существует.';
+            }
+            if(code === 'auth/weak-password') {
+                return 'Пароль слишком короткий (нужно минимум 6 символов).';
+            }
+            if(code === 'auth/invalid-email') {
+                return 'Некорректный формат email.';
+            }
+            return 'Произошла ошибка связи с сервером. Попробуйте еще раз.';
+        }
+    </script>
+</body>
+</html>

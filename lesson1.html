@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 1: Финансовые цели | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --success: #4caf50; --danger: #e57373; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        
+        /* Шапка */
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .content { flex: 1; padding: 25px 20px; overflow-y: auto; }
+        
+        /* Теория */
+        .quote-block { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold-light); font-style: italic; text-align: center; margin-bottom: 25px; padding: 20px; background: rgba(212, 175, 55, 0.05); border-radius: 12px; border: 1px dashed var(--gold-primary); }
+        .text-block { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+        .text-block strong { color: var(--text-main); font-weight: 600; }
+        
+        h2 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--gold-primary); margin: 35px 0 15px; line-height: 1.3; }
+        
+        /* Карточки сравнения */
+        .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .comp-card { background: var(--surface); border: 1px solid var(--border-color); padding: 15px; border-radius: 12px; }
+        .comp-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 600; }
+        .comp-text { font-size: 13px; line-height: 1.4; color: var(--text-muted); }
+        .comp-card.bad { border-top: 3px solid var(--danger); }
+        .comp-card.good { border-top: 3px solid var(--success); }
+
+        /* Шаги */
+        .step-list { margin-bottom: 35px; }
+        .step-item { display: flex; margin-bottom: 12px; background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .step-num { color: var(--gold-primary); font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 600; margin-right: 15px; line-height: 1; }
+        .step-content { flex: 1; }
+        .step-title { font-size: 14px; color: var(--text-main); font-weight: 600; margin-bottom: 5px; }
+        .step-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+        /* Генератор Мечты */
+        .generator-card { background: linear-gradient(145deg, #111, var(--surface)); border: 1px solid var(--gold-primary); border-radius: 16px; padding: 25px 20px; margin-bottom: 35px; }
+        .generator-card h3 { color: var(--gold-light); margin-top: 0; text-align: center; font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 5px; }
+        
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+        .input-wrapper { position: relative; }
+        .input-wrapper input { width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; outline: none; transition: 0.3s; }
+        .input-wrapper input.has-icon { padding-right: 35px; }
+        .input-wrapper input:focus { border-color: var(--gold-primary); }
+        .input-wrapper span { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; }
+
+        .generate-btn { width: 100%; padding: 14px; margin-top: 10px; background: rgba(212, 175, 55, 0.1); border: 1px dashed var(--gold-primary); color: var(--gold-light); border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .generate-btn:active { transform: scale(0.98); background: rgba(212, 175, 55, 0.2); }
+        
+        .result-box { display: none; margin-top: 20px; background: rgba(76, 175, 80, 0.1); border: 1px solid var(--success); border-radius: 12px; padding: 20px; animation: fadeIn 0.4s ease; }
+        .result-title { font-size: 11px; color: var(--success); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
+        .result-text { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text-main); line-height: 1.4; margin-bottom: 15px; }
+        .result-tip { font-size: 12px; color: var(--text-muted); border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px; line-height: 1.4; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .module-divider { height: 1px; background: var(--border-color); margin: 35px 0; }
+
+        /* Прямоугольные плашки для доп. материалов */
+        .materials-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .material-link { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; text-decoration: none; transition: 0.2s; }
+        .material-link:active { transform: scale(0.98); border-color: var(--gold-primary); }
+        .material-icon { font-size: 24px; margin-right: 15px; width: 44px; height: 44px; background: rgba(212, 175, 55, 0.1); border-radius: 10px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .material-info { flex: 1; }
+        .material-title { font-size: 14px; color: var(--text-main); font-weight: 500; margin-bottom: 4px; }
+        .material-desc { font-size: 12px; color: var(--text-muted); }
+        .material-arrow { color: var(--gold-primary); font-size: 20px; font-weight: 600; margin-left: 10px; }
+
+        /* Нижняя панель */
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .save-btn { width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .save-btn:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='index.html'">←</button>
+            <div class="header-title">
+                <h1>Урок 1</h1>
+                <p>Финансовые цели</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content">
+            
+            <div class="quote-block">«Вижу цель — не вижу препятствий»</div>
+
+            <p class="text-block">Люди могут иметь разные цели: выучиться на режиссера, получить высокооплачиваемую работу, посетить 20 стран, накопить на автомобиль мечты.</p>
+            <p class="text-block">Но если спросить: «Какая у тебя финансовая цель?» — мы часто слышим абстрактные ответы вроде «хочу много денег» или «хочу новенький iPhone 17 Pro». Правда в том, что до финансовой цели тут еще далеко.</p>
+
+            <h2>Как отличить финансовую цель от хотелки?</h2>
+            <p class="text-block">Цель имеет точные параметры: <strong>задача, срок и конкретный результат.</strong></p>
+
+            <div class="comparison-grid">
+                <div class="comp-card bad">
+                    <div class="comp-title" style="color: var(--danger);">Хотелка</div>
+                    <div class="comp-text">«Хочу новый iPhone 17 Pro»</div>
+                </div>
+                <div class="comp-card good">
+                    <div class="comp-title" style="color: var(--success);">Цель</div>
+                    <div class="comp-text">«Хочу накопить 160 000 ₽ за 3 месяца, чтобы купить iPhone»</div>
+                </div>
+            </div>
+
+            <p class="text-block"><strong>Другие примеры правильных целей:</strong><br>
+            • Накопить 60 000 ₽ за полгода на стайлер для волос.<br>
+            • За год накопить 150 000 ₽ на онлайн-курсы по дизайну.<br>
+            • Накопить 2 000 000 ₽ на первый взнос по ипотеке к концу 2026 года.<br>
+            • Обеспечить прибавку к пенсии 50 000 ₽ в месяц через 30 лет.</p>
+            
+            <p class="text-block">Когда есть конкретная цель, под нее можно прописать пошаговый план. Это позволяет отслеживать прогресс, оценивать срок до достижения цели и при необходимости корректировать действия. В таком случае шанс не достичь цели минимален.</p>
+
+            <h2>От мечты к действию</h2>
+            <p class="text-block">Если ты начинаешь копить деньги без четко поставленной цели, такие накопления легко расходуются на импульсивные траты. Допустим, ты ежемесячно откладываешь 5 000 рублей. За год ты накопишь 60 000 рублей. Много это или мало? Все относительно: на подарки близким хватит, а вот на машину или подушку безопасности — маловато.</p>
+            <p class="text-block">Достичь финансовой цели поможет <strong>декомпозиция</strong> — деление большой цели на небольшие шаги, которые в конечном счете приведут к желаемому результату.</p>
+
+            <h2>6 шагов для достижения цели</h2>
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <div class="step-title">Рассчитай сумму</div>
+                        <div class="step-desc">Посчитай, сколько стоит твоя цель, и создай отдельный счет для нее.</div>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Найди разницу (Дельту)</div>
+                        <div class="step-desc">Определи разницу между доходами и расходами. Так будет удобнее понять, сколько ты можешь ежемесячно откладывать.</div>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <div class="step-title">Определи срок</div>
+                        <div class="step-desc">Раздели стоимость цели на величину ежемесячных накоплений.</div>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <div class="step-title">Максимизируй доход</div>
+                        <div class="step-desc">Попроси повышения зарплаты, повысь квалификацию или найди доп. источник дохода.</div>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">5</div>
+                    <div class="step-content">
+                        <div class="step-title">Учти инфляцию</div>
+                        <div class="step-desc">Если срок больше 12 месяцев, накопления придется защищать от обесценивания через инвестиции.</div>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">6</div>
+                    <div class="step-content">
+                        <div class="step-title">Сверхдоходы — в копилку</div>
+                        <div class="step-desc">Любые незапланированные деньги направляй на ускорение цели.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ИНТЕРАКТИВ: РАСЧЕТ МЕЧТЫ -->
+            <div class="generator-card">
+                <h3>Расчет мечты</h3>
+                <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 20px;">Прямо сейчас оцифруем вашу цель и превратим ее в план.</p>
+
+                <div class="input-group">
+                    <label>Что вы хотите? (Конечный результат)</label>
+                    <div class="input-wrapper"><input type="text" id="gName" placeholder="Например: Автомобиль"></div>
+                </div>
+                <div class="input-group">
+                    <label>Сколько это стоит?</label>
+                    <div class="input-wrapper"><input type="number" id="gTotal" class="has-icon" placeholder="2000000"><span>₽</span></div>
+                </div>
+                <div class="input-group">
+                    <label>Сколько уже накоплено?</label>
+                    <div class="input-wrapper"><input type="number" id="gCurrent" class="has-icon" placeholder="0"><span>₽</span></div>
+                </div>
+                <div class="input-group">
+                    <label>Сколько готовы откладывать в месяц?</label>
+                    <div class="input-wrapper"><input type="number" id="gMonthly" class="has-icon" placeholder="30000"><span>₽</span></div>
+                </div>
+
+                <button class="generate-btn" onclick="generateGoal()">🪄 Сформулировать цель</button>
+
+                <div class="result-box" id="resultBox">
+                    <div class="result-title">🎯 Ваша SMART-цель:</div>
+                    <div class="result-text" id="resultText"></div>
+                    <div class="result-tip" id="resultTip"></div>
+                </div>
+            </div>
+
+            <div class="module-divider"></div>
+
+            <h2>Дополнительные материалы</h2>
+            <p class="text-block">Выполните задания и закрепите материалы урока в сервисах ниже.</p>
+
+            <!-- ПРЯМОУГОЛЬНЫЕ ПЛАШКИ МАТЕРИАЛОВ -->
+            <div class="materials-list">
+                
+                <a href="guide1.html" class="material-link">
+                    <div class="material-icon">📖</div>
+                    <div class="material-info">
+                        <div class="material-title">Гайд к уроку</div>
+                        <div class="material-desc">Подробный PDF-конспект</div>
+                    </div>
+                    <div class="material-arrow">→</div>
+                </a>
+
+                <a href="networth.html" class="material-link">
+                    <div class="material-icon">⚖️</div>
+                    <div class="material-info">
+                        <div class="material-title">Калькулятор капитала (Net Worth)</div>
+                        <div class="material-desc">Узнай свою реальную Точку А</div>
+                    </div>
+                    <div class="material-arrow">→</div>
+                </a>
+
+                <a href="workbook1.html" class="material-link">
+                    <div class="material-icon">📓</div>
+                    <div class="material-info">
+                        <div class="material-title">Рабочая тетрадь</div>
+                        <div class="material-desc">Задания и фиксация инсайтов</div>
+                    </div>
+                    <div class="material-arrow">→</div>
+                </a>
+
+                <a href="test1.html" class="material-link" style="border-color: rgba(212, 175, 55, 0.4);">
+                    <div class="material-icon">✅</div>
+                    <div class="material-info">
+                        <div class="material-title">Пройти тест</div>
+                        <div class="material-desc">Проверка знаний по Уроку 1</div>
+                    </div>
+                    <div class="material-arrow">→</div>
+                </a>
+
+            </div>
+
+        </div>
+
+        <div class="bottom-action">
+            <button class="save-btn" id="finishBtn" onclick="completeLesson()">Завершить Урок 1</button>
+        </div>
+    </div>
+
+    <script>
+        // Интерактивный генератор целей
+        function generateGoal() {
+            const name = document.getElementById('gName').value.trim() || 'Моя цель';
+            const total = parseFloat(document.getElementById('gTotal').value) || 0;
+            const current = parseFloat(document.getElementById('gCurrent').value) || 0;
+            const monthly = parseFloat(document.getElementById('gMonthly').value) || 0;
+            
+            const resultBox = document.getElementById('resultBox');
+            const resultText = document.getElementById('resultText');
+            const resultTip = document.getElementById('resultTip');
+
+            if (total <= 0 || monthly <= 0) {
+                alert("Пожалуйста, заполните стоимость цели и сумму отчислений.");
+                return;
+            }
+
+            const remaining = total - current;
+            if (remaining <= 0) {
+                resultBox.style.display = 'block';
+                resultText.innerHTML = `Поздравляем! У вас уже достаточно средств на <strong>«${name}»</strong>.`;
+                resultTip.innerHTML = "Шаг 6: Наслаждайтесь результатом и ставьте новую, более амбициозную цель.";
+                return;
+            }
+
+            const monthsNeeded = Math.ceil(remaining / monthly);
+            const years = Math.floor(monthsNeeded / 12);
+            const months = monthsNeeded % 12;
+            let timeString = '';
+            if (years > 0) timeString += years + (years === 1 ? ' год ' : (years < 5 ? ' года ' : ' лет '));
+            if (months > 0) timeString += months + (months === 1 ? ' месяц' : (months < 5 ? ' месяца' : ' месяцев'));
+
+            resultText.innerHTML = `«Я накоплю <strong>${total.toLocaleString('ru-RU')} ₽</strong> на <strong>${name}</strong> за <strong>${timeString}</strong>, откладывая по <strong>${monthly.toLocaleString('ru-RU')} ₽</strong> каждый месяц».`;
+
+            if (monthsNeeded > 12) {
+                resultTip.innerHTML = `💡 <strong>Шаг 5 (Инфляция):</strong> Так как срок больше года, деньги нужно защищать от инфляции. Положите их на вклад, накопительный счет или используйте облигации. Это сократит срок достижения цели!`;
+            } else {
+                resultTip.innerHTML = `💡 <strong>Совет:</strong> Отличный срок! Чтобы не потратить деньги импульсивно (Шаг 1), откройте отдельный счет и настройте автопополнение на ${monthly.toLocaleString('ru-RU')} ₽.`;
+            }
+
+            resultBox.style.display = 'block';
+
+            // Сохраняем введенные данные
+            const goalData = { name, total, current, monthly };
+            localStorage.setItem('user_goal', JSON.stringify(goalData));
+        }
+
+        // Завершение урока
+        function completeLesson() {
+            localStorage.setItem('module1_completed', 'true');
+            
+            const btn = document.getElementById('finishBtn');
+            btn.style.background = 'var(--success)';
+            btn.style.color = '#fff';
+            btn.textContent = '✓ Урок пройден!';
+            
+            // Возврат в Главное меню
+            setTimeout(() => { window.location.href = 'index.html'; }, 800);
+        }
+
+        // Восстановление данных при обновлении страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('user_goal');
+            if(saved) {
+                const data = JSON.parse(saved);
+                document.getElementById('gName').value = data.name || '';
+                document.getElementById('gTotal').value = data.total || '';
+                document.getElementById('gCurrent').value = data.current || '';
+                document.getElementById('gMonthly').value = data.monthly || '';
+            }
+        });
+    </script>
+</body>
+</html>

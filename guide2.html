@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гайд 2: Бюджет | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --surface: #171717;
+            --gold-primary: #d4af37;
+            --gold-light: #fde08b;
+            --text-main: #ffffff;
+            --text-muted: #a3a3a3;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', sans-serif; background-color: #000;
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; color: var(--text-main);
+        }
+
+        .mobile-container {
+            width: 100%; max-width: 450px; min-height: 100vh;
+            background-color: var(--bg-dark); display: flex; flex-direction: column;
+        }
+
+        .header {
+            padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex;
+            justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10;
+        }
+
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .article-content { flex: 1; overflow-y: auto; padding: 25px 20px; }
+        .article-title { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--gold-light); margin-bottom: 20px; line-height: 1.3; }
+
+        .quote-block {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), transparent);
+            border-left: 3px solid var(--gold-primary); padding: 20px; border-radius: 0 12px 12px 0; margin-bottom: 25px;
+        }
+        .quote-block p { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--gold-light); font-style: italic; line-height: 1.5; }
+
+        h3.section-heading { font-size: 16px; color: var(--gold-primary); margin: 30px 0 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+        .article-text { font-size: 14px; line-height: 1.6; color: var(--text-muted); margin-bottom: 15px; }
+        .article-text strong { color: var(--text-main); }
+
+        .list-styled { list-style: none; margin: 15px 0; }
+        .list-styled li { position: relative; padding-left: 20px; margin-bottom: 12px; font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+        .list-styled li::before { content: '•'; position: absolute; left: 0; color: var(--gold-primary); font-size: 18px; line-height: 1; }
+        .list-styled li strong { color: var(--text-main); }
+
+        .alert-block {
+            background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px; padding: 15px; margin: 25px 0;
+        }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid #333; }
+        .read-btn {
+            width: 100%; padding: 16px; border-radius: 12px; background: transparent; border: 1px solid var(--gold-primary);
+            color: var(--gold-light); font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;
+        }
+        .read-btn.completed { background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); color: #000; border: none; }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='lesson2.html'">←</button>
+            <div class="header-title">
+                <h1>Учебный материал</h1>
+                <p>Урок 2 • Гайд</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="article-content">
+            <h2 class="article-title">Архитектура личного бюджета</h2>
+            
+            <div class="quote-block">
+                <p>«Вы не можете управлять тем, что не можете измерить. Бюджет — это процесс указания вашим деньгам, куда им идти, вместо того чтобы гадать, куда они ушли.»</p>
+            </div>
+
+            <h3 class="section-heading">Аудит: Взгляд в прошлое</h3>
+            <p class="article-text">Прежде чем строить планы, нужно понять ваши реальные финансовые привычки. Откройте банковское приложение и выпишите траты за последние 2-3 месяца. Вы удивитесь, увидев, что мелкие ежедневные траты («эффект латте») забирают огромную долю дохода.</p>
+
+            <h3 class="section-heading">Категории бюджета</h3>
+            <ul class="list-styled">
+                <li><strong>Обязательные (Жесткие):</strong> То, что нельзя не заплатить. Кредиты, ЖКХ, базовая еда, транспорт. Это фундамент.</li>
+                <li><strong>Переменные (Гибкие):</strong> Одежда, развлечения, рестораны. Эту категорию можно оптимизировать без угрозы для жизни.</li>
+                <li><strong>Фонды и сбережения:</strong> Резерв, инвестиции, копилка на отпуск.</li>
+            </ul>
+
+            <h3 class="section-heading">Золотое правило: Заплати себе</h3>
+            <p class="article-text">Обычно люди тратят деньги весь месяц, а откладывают то, что осталось в конце (спойлер: обычно ничего не остается). </p>
+            <p class="article-text"><strong>Смените парадигму:</strong> Как только пришла зарплата, сразу переведите 10% на счет-копилку или инвестиции. Вы заплатили СЕБЕ в будущее. Только после этого оплачивайте счета и живите на остаток.</p>
+
+            <div class="alert-block">
+                <strong style="color: var(--gold-light); display: block; margin-bottom: 8px;">Что такое Дельта?</strong>
+                <p class="article-text" style="margin-bottom: 0;">Это Доходы минус Расходы. Если дельта отрицательная — вы спонсируете чужой бизнес в долг. Наша задача сделать дельту положительной и направить ее на достижение ваших целей из Модуля 1.</p>
+            </div>
+
+        </div>
+
+        <div class="bottom-action">
+            <button class="read-btn" id="markReadBtn">Отметить как прочитанное</button>
+        </div>
+    </div>
+
+    <script>
+        const btn = document.getElementById('markReadBtn');
+        btn.addEventListener('click', function() {
+            this.classList.add('completed');
+            this.textContent = '✓ Прочитано';
+            setTimeout(() => { window.location.href='lesson2.html'; }, 800);
+        });
+    </script>
+</body>
+</html>

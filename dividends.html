@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рост капитала | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --success: #4caf50; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        .calc-card { background: var(--surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .input-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .input-row label { font-size: 13px; color: var(--text-muted); flex: 1; padding-right: 10px; line-height: 1.3; }
+        .input-wrapper { position: relative; width: 130px; }
+        .input-wrapper input { width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 30px 10px 10px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; text-align: right; outline: none; transition: 0.3s; }
+        .input-wrapper input:focus { border-color: var(--gold-primary); }
+        .input-wrapper span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px; }
+
+        .chart-container { background: var(--surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 15px; margin-bottom: 25px; position: relative; height: 260px; width: 100%; }
+        
+        .summary-box { display: flex; justify-content: space-between; margin-bottom: 30px; background: rgba(212, 175, 55, 0.05); border: 1px dashed var(--gold-primary); border-radius: 12px; padding: 15px; text-align: center; }
+        .summary-item { flex: 1; }
+        .summary-item:first-child { border-right: 1px solid var(--border-color); }
+        .summary-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
+        .summary-val { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold-light); font-weight: 600; }
+
+        /* Инструкция */
+        .info-block { background: var(--surface); border-radius: 12px; padding: 20px; margin-top: 10px; border-left: 3px solid var(--gold-primary); }
+        .info-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--text-main); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .info-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+        .info-text ul { padding-left: 20px; margin-top: 10px; }
+        .info-text li { margin-bottom: 6px; }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .btn-export { width: 100%; padding: 16px; border-radius: 12px; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 15px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .save-btn { width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .save-btn:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="saveDataAndExit('index.html')">←</button>
+            <div class="header-title">
+                <h1>Сложный процент</h1>
+                <p>Рост капитала</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content">
+            
+            <div class="calc-card">
+                <div class="input-row">
+                    <label>Стартовый капитал</label>
+                    <div class="input-wrapper"><input type="number" id="startAmt" value="50000" oninput="calcCompound()"><span>₽</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Ежемесячное пополнение</label>
+                    <div class="input-wrapper"><input type="number" id="monthAmt" value="10000" oninput="calcCompound()"><span>₽</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Ожидаемая доходность</label>
+                    <div class="input-wrapper"><input type="number" id="rate" value="15" oninput="calcCompound()"><span>%</span></div>
+                </div>
+                <div class="input-row">
+                    <label>Срок инвестирования</label>
+                    <div class="input-wrapper"><input type="number" id="years" value="10" oninput="calcCompound()"><span>Лет</span></div>
+                </div>
+            </div>
+
+            <!-- Сравнительный график -->
+            <div class="chart-container">
+                <canvas id="compoundChart"></canvas>
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-item">
+                    <div class="summary-title">Вложено своих</div>
+                    <div class="summary-val" id="totalInvested">0 ₽</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-title">Итоговый капитал</div>
+                    <div class="summary-val" style="color: var(--success);" id="totalResult">0 ₽</div>
+                </div>
+            </div>
+
+            <div class="info-block">
+                <div class="info-title">ℹ️ Восьмое чудо света</div>
+                <div class="info-text">
+                    Эйнштейн называл сложный процент восьмым чудом света. Те, кто его понимает, зарабатывают его; те, кто не понимает — платят его по кредитам.
+                    <ul>
+                        <li>Серый пунктир — это деньги, которые вы отложили своими руками.</li>
+                        <li>Золотая область — это магия инвестиций, где ваши проценты начинают зарабатывать новые проценты. На долгом сроке прибыль в разы обгоняет ваши собственные вложения!</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bottom-action">
+            <button class="btn-export" id="exportBtn" onclick="exportExcel()">Скачать расчет (Excel)</button>
+            <button class="save-btn" onclick="saveDataAndExit('index.html')">Сохранить и выйти</button>
+        </div>
+    </div>
+
+    <script>
+        let compoundChart;
+        Chart.defaults.color = '#a3a3a3';
+        Chart.defaults.font.family = "'Inter', sans-serif";
+
+        function initCompoundChart() {
+            const ctx = document.getElementById('compoundChart').getContext('2d');
+            compoundChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: [], datasets: [
+                    { label: 'Итоговый капитал', data: [], borderColor: '#d4af37', backgroundColor: 'rgba(212, 175, 55, 0.15)', borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0 },
+                    { label: 'Вложено своих', data: [], borderColor: '#777', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0.4, pointRadius: 0 }
+                ]},
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: { ticks: { callback: function(value) { 
+                            if(value >= 1000000) return (value/1000000).toFixed(1) + 'M';
+                            if(value >= 1000) return (value/1000).toFixed(0) + 'k';
+                            return value; 
+                        } }, grid: { color: '#333' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 15, padding: 15 } } }
+                }
+            });
+        }
+
+        function calcCompound() {
+            if(!compoundChart) return;
+            
+            const startAmt = parseFloat(document.getElementById('startAmt').value) || 0;
+            const monthAmt = parseFloat(document.getElementById('monthAmt').value) || 0;
+            const rate = parseFloat(document.getElementById('rate').value) || 0;
+            const years = parseInt(document.getElementById('years').value) || 0;
+
+            const labels = [];
+            const resultData = [];
+            const investedData = [];
+
+            let currentResult = startAmt;
+            let currentInvested = startAmt;
+            const monthlyRate = rate / 100 / 12;
+
+            for (let i = 0; i <= years; i++) {
+                labels.push(i + ' год');
+                resultData.push(Math.round(currentResult));
+                investedData.push(Math.round(currentInvested));
+
+                // Рассчитываем прирост за 12 месяцев
+                for(let m=0; m<12; m++) {
+                    currentResult = (currentResult + monthAmt) * (1 + monthlyRate);
+                    currentInvested += monthAmt;
+                }
+            }
+
+            compoundChart.data.labels = labels;
+            compoundChart.data.datasets[0].data = resultData;
+            compoundChart.data.datasets[1].data = investedData;
+            compoundChart.update();
+
+            document.getElementById('totalInvested').textContent = investedData[investedData.length - 1].toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('totalResult').textContent = resultData[resultData.length - 1].toLocaleString('ru-RU') + ' ₽';
+        }
+
+        async function exportExcel() {
+            const btn = document.getElementById('exportBtn');
+            const origText = btn.innerHTML;
+            btn.innerHTML = 'Формирование...'; btn.disabled = true;
+            try {
+                const wb = new ExcelJS.Workbook();
+                const ws = wb.addWorksheet('Сложный процент');
+                ws.columns = [{width: 30}, {width: 25}];
+
+                ws.addRow(['КАЛЬКУЛЯТОР КАПИТАЛА']).font = {bold: true, size: 14};
+                ws.addRow(['Стартовый капитал (₽):', document.getElementById('startAmt').value]);
+                ws.addRow(['Пополнение в месяц (₽):', document.getElementById('monthAmt').value]);
+                ws.addRow(['Ставка (%):', document.getElementById('rate').value]);
+                ws.addRow(['Срок (лет):', document.getElementById('years').value]);
+                ws.addRow([]);
+                ws.addRow(['Вложено своих (₽):', document.getElementById('totalInvested').textContent]).font = {bold: true};
+                ws.addRow(['Итоговый капитал (₽):', document.getElementById('totalResult').textContent]).font = {bold: true, color: {argb: 'FFD4AF37'}};
+                
+                const buffer = await wb.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Compound_Interest.xlsx`; link.click();
+            } finally { btn.innerHTML = origText; btn.disabled = false; }
+        }
+
+        const PAGE_KEY = 'dividends_module';
+        function saveAllData() {
+            const inputs = document.querySelectorAll('input[type="number"]');
+            let dataToSave = { numbers: Array.from(inputs).map(inp => inp.value) };
+            localStorage.setItem(PAGE_KEY, JSON.stringify(dataToSave));
+        }
+
+        function loadAllData() {
+            initCompoundChart();
+            const saved = localStorage.getItem(PAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                const inputs = document.querySelectorAll('input[type="number"]');
+                data.numbers.forEach((val, i) => { if(inputs[i]) inputs[i].value = val; });
+            }
+            calcCompound();
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAllData);
+
+        function saveDataAndExit(url) {
+            saveAllData();
+            const btn = document.querySelector('.save-btn');
+            if(btn) { btn.style.background = '#4caf50'; btn.style.color = '#fff'; btn.textContent = '✓ Сохранено!'; }
+            setTimeout(() => { window.location.href = url; }, 600);
+        }
+    </script>
+</body>
+</html>

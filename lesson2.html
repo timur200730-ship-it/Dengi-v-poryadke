@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 2: Бюджет и Кредиты | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --success: #4caf50; --danger: #e57373; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .content { flex: 1; padding: 25px 20px; overflow-y: auto; }
+        
+        .quote-block { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); font-style: italic; text-align: center; margin-bottom: 25px; padding: 20px; background: rgba(212, 175, 55, 0.05); border-radius: 12px; border: 1px dashed var(--gold-primary); line-height: 1.5; }
+        .text-block { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+        .text-block strong { color: var(--text-main); font-weight: 600; }
+        
+        h2 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--gold-primary); margin: 35px 0 15px; line-height: 1.3; }
+        h3 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--text-main); margin: 25px 0 12px; }
+
+        .step-list { margin-bottom: 25px; }
+        .step-item { display: flex; margin-bottom: 12px; background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .step-num { color: var(--gold-primary); font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 600; margin-right: 15px; line-height: 1; }
+        .step-content { flex: 1; }
+        .step-title { font-size: 14px; color: var(--text-main); font-weight: 600; margin-bottom: 5px; }
+        .step-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+        .generator-card { background: linear-gradient(145deg, #111, var(--surface)); border: 1px solid var(--gold-primary); border-radius: 16px; padding: 25px 20px; margin-bottom: 35px; }
+        .generator-card h3 { color: var(--gold-light); margin-top: 0; text-align: center; font-size: 18px; margin-bottom: 5px; }
+        .input-group { margin-bottom: 15px; }
+        .input-wrapper { position: relative; }
+        .input-wrapper input { width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; outline: none; transition: 0.3s; }
+        .input-wrapper input:focus { border-color: var(--gold-primary); }
+        .input-wrapper span { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; }
+        
+        .result-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed #333; }
+        .result-row:last-child { border-bottom: none; }
+        .res-label { font-size: 13px; color: var(--text-muted); }
+        .res-val { font-size: 15px; font-family: 'Playfair Display', serif; font-weight: 600; color: var(--text-main); }
+
+        .module-divider { height: 1px; background: var(--border-color); margin: 35px 0; }
+
+        .materials-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .material-link { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; text-decoration: none; transition: 0.2s; }
+        .material-link:active { transform: scale(0.98); border-color: var(--gold-primary); }
+        .material-icon { font-size: 24px; margin-right: 15px; width: 44px; height: 44px; background: rgba(212, 175, 55, 0.1); border-radius: 10px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .material-info { flex: 1; }
+        .material-title { font-size: 14px; color: var(--text-main); font-weight: 500; margin-bottom: 4px; }
+        .material-desc { font-size: 12px; color: var(--text-muted); }
+        .material-arrow { color: var(--gold-primary); font-size: 20px; font-weight: 600; margin-left: 10px; }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .save-btn { width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .save-btn:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='index.html'">←</button>
+            <div class="header-title">
+                <h1>Урок 2</h1>
+                <p>Бюджет и Кредиты</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content">
+            
+            <div class="quote-block">
+                Мы ведем бюджет не для того, чтобы себя ограничивать.<br>Мы делаем это, чтобы достичь финансовой цели. И не стоит отказывать себе в мелочах совершенно.
+            </div>
+
+            <h2>5 способов вести бюджет</h2>
+            <div class="step-list">
+                <div class="step-item"><div class="step-num">1</div><div class="step-content"><div class="step-title">Исторический метод</div><div class="step-desc">Подойдет, если ты уже примерно представляешь свои траты. Учти сезонные расходы (подарки, отпуск, налоги, техосмотр), закладывай 5% на форс-мажоры.</div></div></div>
+                <div class="step-item"><div class="step-num">2</div><div class="step-content"><div class="step-title">Метод 50/30/20</div><div class="step-desc">50% — обязательные расходы, 30% — необязательные, 20% — накопления или погашение долгов.</div></div></div>
+                <div class="step-item"><div class="step-num">3</div><div class="step-content"><div class="step-title">Метод 80/20</div><div class="step-desc">Сразу направляй 20% на накопления, а остальные 80% трать, как хочется. Самый легкий способ.</div></div></div>
+                <div class="step-item"><div class="step-num">4</div><div class="step-content"><div class="step-title">Четыре конверта</div><div class="step-desc">Вычти обязательные расходы и сбережения, остаток раздели на 4 части по неделям. Остаток недели — в инвестиции.</div></div></div>
+                <div class="step-item"><div class="step-num">5</div><div class="step-content"><div class="step-title">Шесть кувшинов</div><div class="step-desc">База — 55%, Развлечения — 10%, Инвестиции — 10%, Образование — 10%, Крупные покупки — 10%, Подарки — 5%.</div></div></div>
+            </div>
+
+            <!-- КАЛЬКУЛЯТОР 50/30/20 -->
+            <div class="generator-card">
+                <h3>Примерка метода 50/30/20</h3>
+                <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 20px;">Введите ваш доход, чтобы увидеть пропорцию.</p>
+                
+                <div class="input-group">
+                    <div class="input-wrapper"><input type="number" id="budgetInput" placeholder="Ваш доход (например: 100000)" oninput="calcBudget()"><span>₽</span></div>
+                </div>
+
+                <div class="result-row"><span class="res-label">50% (База и жизнь)</span><span class="res-val" id="b50">0 ₽</span></div>
+                <div class="result-row"><span class="res-label">30% (Радости и досуг)</span><span class="res-val" id="b30">0 ₽</span></div>
+                <div class="result-row"><span class="res-label" style="color: var(--gold-light);">20% (Капитал/Долги)</span><span class="res-val" id="b20" style="color: var(--gold-primary);">0 ₽</span></div>
+            </div>
+
+            <h2>Лайфхаки для финансов</h2>
+            
+            <h3>Как бороться с импульсивными покупками</h3>
+            <p class="text-block"><strong>Составляй списки.</strong> Записывай заранее то, что понадобится через время.<br>
+            <strong>Откладывай на импульсы.</strong> Переводи по 5 000 руб. в месяц на отдельный счет — это твои деньги на мелкие спонтанные радости.<br>
+            <strong>Давай себе время.</strong> Хочешь купить что-то незапланированное? Договорись с собой купить это через неделю. Скорее всего, желание пропадет.</p>
+
+            <h3>Как фиксировать расходы</h3>
+            <p class="text-block">1. В приложении банка (статистика по картам).<br>2. В специальном приложении для учета.<br>3. В таблице Excel для полного контроля.</p>
+
+            <h3>Что делать, если откладывать не получается</h3>
+            <p class="text-block">Откладывай в начале месяца, а не по остаточному принципу! Переведи дельту на накопительный счет сразу после получения зарплаты, чтобы баланс карты "похудел".</p>
+
+            <h2>Кредитные карты и правила безопасности</h2>
+            <p class="text-block"><strong>Как не надо использовать кредитку:</strong><br>
+            • Снимать наличные (льготный период сгорает сразу, проценты начисляются с первого дня).<br>
+            • Нарушать сроки беспроцентного периода (устанавливайте напоминания в календарь за 10 дней до окончания грейс-периода).</p>
+
+            <div class="module-divider"></div>
+
+            <h2>Практика к Уроку 2</h2>
+            <div class="materials-list">
+                <a href="guide2.html" class="material-link">
+                    <div class="material-icon">📖</div>
+                    <div class="material-info"><div class="material-title">Гайд к уроку</div><div class="material-desc">Конспект по бюджету и кредиткам</div></div>
+                    <div class="material-arrow">→</div>
+                </a>
+                <a href="balance.html" class="material-link">
+                    <div class="material-icon" style="background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); color: #000;">⚖️</div>
+                    <div class="material-info"><div class="material-title">Аудит Бюджета</div><div class="material-desc">Найдите свою «Свободную Дельту»</div></div>
+                    <div class="material-arrow">→</div>
+                </a>
+                <a href="workbook2.html" class="material-link">
+                    <div class="material-icon">📓</div>
+                    <div class="material-info"><div class="material-title">Рабочая тетрадь</div><div class="material-desc">Задания и фиксация инсайтов</div></div>
+                    <div class="material-arrow">→</div>
+                </a>
+                <a href="test2.html" class="material-link" style="border-color: rgba(212, 175, 55, 0.4);">
+                    <div class="material-icon">✅</div>
+                    <div class="material-info"><div class="material-title">Пройти тест 2</div><div class="material-desc">Проверка знаний по Бюджету</div></div>
+                    <div class="material-arrow">→</div>
+                </a>
+            </div>
+
+        </div>
+
+        <div class="bottom-action">
+            <button class="save-btn" id="finishBtn" onclick="completeLesson()">Завершить Урок 2</button>
+        </div>
+    </div>
+
+    <script>
+        function calcBudget() {
+            const income = parseFloat(document.getElementById('budgetInput').value) || 0;
+            document.getElementById('b50').textContent = (income * 0.5).toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('b30').textContent = (income * 0.3).toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('b20').textContent = (income * 0.2).toLocaleString('ru-RU') + ' ₽';
+        }
+
+        function completeLesson() {
+            localStorage.setItem('module2_completed', 'true');
+            const btn = document.getElementById('finishBtn');
+            btn.style.background = 'var(--success)';
+            btn.style.color = '#fff';
+            btn.textContent = '✓ Урок пройден!';
+            setTimeout(() => { window.location.href = 'index.html'; }, 800);
+        }
+    </script>
+</body>
+</html>

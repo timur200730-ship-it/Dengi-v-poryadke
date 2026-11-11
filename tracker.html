@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Финансовый трекер | Деньги в порядке</title>
+
+    <!-- ExcelJS для выгрузки .xlsx -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #000000;
+            --surface: #171717;
+            --surface-light: #262626;
+            --gold-primary: #d4af37;
+            --gold-light: #fde08b;
+            --text-main: #ffffff;
+            --text-muted: #a3a3a3;
+            --border-color: #333333;
+            --positive: #4caf50;
+            --negative: #e57373;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container { width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 30px; }
+
+        /* ===== Шапка ===== */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .back-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--gold-primary);
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .back-btn:hover { border-color: var(--gold-primary); background: rgba(212, 175, 55, 0.1); }
+        .back-btn:active { transform: scale(0.95); }
+
+        .header { text-align: center; flex: 1; }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: var(--gold-light);
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .header-spacer { width: 42px; }
+
+        /* ===== Сетка дашборда ===== */
+        .dashboard {
+            display: grid; grid-template-columns: 1fr 2fr; gap: 30px;
+            align-items: start; margin-bottom: 20px;
+        }
+
+        @media (max-width: 850px) { .dashboard { grid-template-columns: 1fr; } }
+
+        .panel {
+            background-color: var(--surface); border-radius: 12px;
+            padding: 30px; border: 1px solid var(--border-color);
+        }
+
+        .panel-instructions {
+            grid-column: 1 / -1; border-top: 3px solid var(--gold-primary);
+            background: linear-gradient(180deg, var(--surface) 0%, var(--bg-dark) 100%);
+        }
+
+        h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem; color: var(--gold-primary); margin-bottom: 20px;
+        }
+
+        .input-group { margin-bottom: 25px; }
+        .input-group label {
+            display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;
+        }
+
+        .main-input {
+            width: 100%; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 8px;
+            font-size: 1.1rem; font-family: 'Inter', sans-serif; font-weight: 500; outline: none;
+            transition: all 0.3s ease; background-color: var(--bg-dark); color: var(--text-main);
+        }
+        .main-input:focus { border-color: var(--gold-primary); box-shadow: 0 0 5px rgba(212, 175, 55, 0.2); }
+
+        /* ===== Строки обязательных трат ===== */
+        .expense-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+
+        .expense-row select, .expense-row input {
+            padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px;
+            background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif;
+            font-size: 0.95rem; outline: none; transition: border-color 0.3s;
+        }
+        .expense-row select { flex: 2; cursor: pointer; }
+        .expense-row input { flex: 1; text-align: right; }
+        .expense-row select:focus, .expense-row input:focus { border-color: var(--gold-primary); }
+
+        .btn-remove {
+            background: none; border: none; color: var(--negative); font-size: 20px;
+            cursor: pointer; padding: 0 5px; transition: transform 0.2s;
+        }
+        .btn-remove:hover { transform: scale(1.2); }
+
+        .btn-add {
+            background: transparent; border: 1px dashed var(--gold-primary); color: var(--gold-primary);
+            padding: 12px; width: 100%; font-size: 0.85rem; font-family: 'Inter', sans-serif;
+            cursor: pointer; transition: all 0.3s ease; border-radius: 8px; margin-top: 10px; font-weight: 500;
+        }
+        .btn-add:hover { background: rgba(212, 175, 55, 0.1); }
+
+        .fixed-total-display {
+            text-align: right; font-size: 0.85rem; color: var(--text-muted); margin-top: 15px;
+        }
+        .fixed-total-display span { color: var(--gold-primary); font-size: 1.1rem; margin-left: 8px; font-weight: 600; }
+
+        /* ===== Сводка ===== */
+        .summary-top {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+            margin-bottom: 25px; padding-bottom: 25px; border-bottom: 1px solid var(--border-color);
+        }
+
+        .summary-card { background: var(--bg-dark); padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .summary-card span { display: block; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .summary-card strong { display: block; font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-top: 8px; color: var(--gold-light); }
+
+        /* ===== Таблица ===== */
+        .table-container { overflow-x: auto; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px 10px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { font-weight: 500; color: var(--text-muted); font-size: 0.85rem; }
+        td { font-size: 1rem; color: var(--text-main); }
+
+        td input {
+            width: 140px; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px;
+            font-family: 'Inter', sans-serif; font-size: 1rem; text-align: right; font-weight: 500;
+            background-color: var(--bg-dark); color: var(--text-main); transition: all 0.3s;
+        }
+        td input:focus { border-color: var(--gold-primary); }
+
+        .text-right { text-align: right; }
+        .font-bold { font-weight: 600; }
+
+        /* ===== Кнопки действий ===== */
+        .actions-bar {
+            display: flex; flex-direction: column; gap: 12px;
+        }
+
+        .btn-save {
+            display: block; width: 100%; padding: 18px;
+            background: transparent; color: var(--gold-light);
+            border: 1.5px solid var(--gold-primary); border-radius: 12px;
+            font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: all 0.25s;
+        }
+        .btn-save:hover { background: rgba(212, 175, 55, 0.1); }
+        .btn-save:active { transform: scale(0.98); }
+        .btn-save.saved {
+            background: rgba(76, 175, 80, 0.15);
+            border-color: var(--positive);
+            color: var(--positive);
+        }
+
+        .btn-export {
+            display: block; width: 100%; padding: 18px;
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-light));
+            color: #000; font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600;
+            border: none; border-radius: 12px; cursor: pointer; transition: transform 0.2s;
+        }
+        .btn-export:active { transform: scale(0.98); }
+        .btn-export:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
+
+        /* ===== Инструкции ===== */
+        .instructions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        @media (max-width: 768px) { .instructions-grid { grid-template-columns: 1fr; gap: 20px; } }
+
+        .instruction-block h3 { color: var(--gold-primary); font-size: 1.1rem; margin-bottom: 15px; font-weight: 500; }
+        .instruction-block p, .instruction-block li { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 12px; line-height: 1.6; }
+        .instruction-block ul { list-style: none; }
+        .instruction-block ul li { position: relative; padding-left: 20px; }
+        .instruction-block ul li::before { content: "•"; color: var(--gold-primary); position: absolute; left: 0; font-size: 1.2rem; line-height: 1; }
+        .instruction-block strong { color: var(--text-main); font-weight: 500; }
+
+        /* ===== Мобильная адаптация шапки ===== */
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.6rem; }
+            .header .subtitle { font-size: 0.75rem; letter-spacing: 1.5px; }
+            .back-btn { width: 38px; height: 38px; font-size: 18px; }
+            .header-spacer { width: 38px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- ===== Шапка с кнопкой Назад ===== -->
+    <div class="top-bar">
+        <button class="back-btn" onclick="saveAllData(); window.location.href='index.html'" aria-label="Назад">←</button>
+        <header class="header">
+            <h1>Финансовый трекер</h1>
+            <div class="subtitle">Деньги в порядке • Доп. Инструменты</div>
+        </header>
+        <div class="header-spacer"></div>
+    </div>
+
+    <div class="dashboard">
+
+        <!-- ===== Блок 1: Ввод данных ===== -->
+        <div class="panel">
+            <h2>Ввод данных</h2>
+
+            <div class="input-group">
+                <label>Общий доход (₽)</label>
+                <input type="text" inputmode="decimal" class="main-input" id="total-income" value="87000" oninput="calculate()">
+            </div>
+
+            <div class="input-group">
+                <label>Обязательные траты (₽)</label>
+                <div id="mandatory-expenses-list"></div>
+                <button type="button" class="btn-add" onclick="addMandatoryExpense()">+ Добавить статью расходов</button>
+
+                <div class="fixed-total-display">
+                    Итого обязательных: <span id="fixed-total-sum">0 ₽</span>
+                </div>
+            </div>
+
+            <div class="input-group" style="margin-top: 30px;">
+                <label>Горизонт планирования (дней)</label>
+                <input type="number" inputmode="numeric" class="main-input" id="days-in-month" value="31" oninput="renderTracker()">
+            </div>
+        </div>
+
+        <!-- ===== Блок 2: Динамика и Сводка ===== -->
+        <div class="panel">
+            <h2>Динамика бюджета</h2>
+
+            <div class="summary-top">
+                <div class="summary-card">
+                    <span>Свободная дельта</span>
+                    <strong id="leftover">0 ₽</strong>
+                </div>
+                <div class="summary-card" style="border-color: var(--gold-primary);">
+                    <span>Лимит на день</span>
+                    <strong id="daily-budget">0 ₽</strong>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="tracker-table">
+                    <thead>
+                        <tr>
+                            <th>Дни месяца</th>
+                            <th class="text-right">Траты (₽)</th>
+                            <th class="text-right">Остаток (Сальдо)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tracker-body"></tbody>
+                </table>
+            </div>
+
+            <div class="actions-bar">
+                <button class="btn-save" id="save-btn" onclick="saveDataAndNotify()">💾 Сохранить прогресс</button>
+                <button class="btn-export" id="export-btn" onclick="exportToExcelXLSX()">Скачать отчет (Excel .xlsx)</button>
+            </div>
+        </div>
+
+        <!-- ===== Блок 3: Инструкции ===== -->
+        <div class="panel panel-instructions">
+            <h2>Руководство к действию</h2>
+            <div class="instructions-grid">
+                <div class="instruction-block">
+                    <h3>Техника работы</h3>
+                    <p>Трекер построен на системе <strong>«ежедневного накопительного бюджета»</strong>.</p>
+                    <ul>
+                        <li><strong>Шаг 1:</strong> Впишите общий ожидаемый доход.</li>
+                        <li><strong>Шаг 2:</strong> Составьте список обязательных трат (ЖКХ, транспорт, кредиты). Система рассчитает ваш ежедневный лимит из остатка.</li>
+                        <li><strong>Шаг 3:</strong> Ежедневно вносите текущие спонтанные траты в колонку дней.</li>
+                        <li><strong>Шаг 4:</strong> Нажмите «Сохранить прогресс», чтобы не потерять данные при закрытии страницы.</li>
+                    </ul>
+                </div>
+
+                <div class="instruction-block">
+                    <h3>Финансовая стратегия</h3>
+                    <ul>
+                        <li><strong>Платите сначала себе:</strong> Обязательно добавьте категорию «Накопления» в список обязательных трат (минимум 10%).</li>
+                        <li><strong>Магия зеленого сальдо:</strong> 2-3 «дня без трат» аккумулируют мощный запас и позволяют купить что-то крупное без кредиток.</li>
+                        <li><strong>Управление красной зоной:</strong> Красное сальдо — сигнал к балансировке. Минимизируйте траты в следующие дни, пока виртуальный долг не обнулится.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    /* =========================================================
+       ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+       ========================================================= */
+    let dailyExpenses = [];
+
+    const EXPENSE_CATEGORIES = [
+        'Оплата услуг ЖКХ', 'Продукты питания', 'Транспорт и авто',
+        'Кредиты и ипотека', 'Связь и интернет', 'Накопления и инвестиции',
+        'Здоровье и аптеки', 'Дети и образование', 'Развлечения и подписки', 'Другое'
+    ];
+
+    const PAGE_KEY = 'tracker_module_v1';
+
+    /* =========================================================
+       БЛОК СОХРАНЕНИЯ / ЗАГРУЗКИ
+       ========================================================= */
+
+    function saveAllData() {
+        try {
+            const mandatory = [];
+            document.querySelectorAll('#mandatory-expenses-list .expense-row').forEach(row => {
+                const catEl = row.querySelector('.mandatory-category');
+                const amtEl = row.querySelector('.mandatory-amount');
+                if (catEl && amtEl) {
+                    mandatory.push({ cat: catEl.value, amount: amtEl.value });
+                }
+            });
+
+            const data = {
+                income: document.getElementById('total-income').value,
+                days: document.getElementById('days-in-month').value,
+                mandatory: mandatory,
+                dailyExpenses: dailyExpenses
+            };
+
+            localStorage.setItem(PAGE_KEY, JSON.stringify(data));
+            return true;
+        } catch (e) {
+            console.warn('Save error:', e);
+            return false;
+        }
+    }
+
+    function loadAllData() {
+        const saved = localStorage.getItem(PAGE_KEY);
+        if (!saved) return false;
+        try {
+            const data = JSON.parse(saved);
+
+            if (data.income !== undefined && data.income !== null) {
+                document.getElementById('total-income').value = data.income;
+            }
+            if (data.days !== undefined && data.days !== null) {
+                document.getElementById('days-in-month').value = data.days;
+            }
+
+            const container = document.getElementById('mandatory-expenses-list');
+            container.innerHTML = '';
+            if (Array.isArray(data.mandatory) && data.mandatory.length) {
+                data.mandatory.forEach(item => addMandatoryExpense(item.cat, item.amount));
+            }
+
+            if (Array.isArray(data.dailyExpenses)) {
+                dailyExpenses = data.dailyExpenses.slice();
+            }
+
+            return true;
+        } catch (e) {
+            console.warn('Load error:', e);
+            return false;
+        }
+    }
+
+    function saveDataAndNotify() {
+        const ok = saveAllData();
+        const btn = document.getElementById('save-btn');
+
+        if (ok) {
+            btn.classList.add('saved');
+            btn.innerText = '✓ Сохранено';
+
+            setTimeout(() => {
+                btn.classList.remove('saved');
+                btn.innerText = '💾 Сохранить прогресс';
+            }, 1500);
+        } else {
+            alert('Не удалось сохранить данные. Проверьте, разрешено ли хранилище в браузере.');
+        }
+    }
+
+    // Страховочное автосохранение при закрытии/перезагрузке вкладки
+    window.addEventListener('beforeunload', saveAllData);
+
+    /* =========================================================
+       ИНИЦИАЛИЗАЦИЯ
+       ========================================================= */
+    document.addEventListener('DOMContentLoaded', () => {
+        const restored = loadAllData();
+
+        if (!restored) {
+            // Пара примеров, чтобы слушатель видел, как выглядит строка
+            addMandatoryExpense('Оплата услуг ЖКХ', '10000');
+            addMandatoryExpense('Продукты питания', '30000');
+        }
+
+        renderTracker();
+    });
+
+    /* =========================================================
+       ОБЯЗАТЕЛЬНЫЕ ТРАТЫ
+       ========================================================= */
+    function addMandatoryExpense(defaultCat = 'Другое', defaultAmount = '') {
+        const container = document.getElementById('mandatory-expenses-list');
+        const row = document.createElement('div');
+        row.className = 'expense-row';
+
+        let optionsHtml = EXPENSE_CATEGORIES.map(cat =>
+            `<option value="${cat}" ${cat === defaultCat ? 'selected' : ''}>${cat}</option>`
+        ).join('');
+
+        row.innerHTML = `
+            <select class="mandatory-category" onchange="calculate()">
+                ${optionsHtml}
+            </select>
+            <input type="text" inputmode="decimal" class="mandatory-amount" placeholder="0" value="${defaultAmount}" oninput="calculate()">
+            <button type="button" class="btn-remove" onclick="removeMandatoryExpense(this)">×</button>
+        `;
+        container.appendChild(row);
+        calculate();
+    }
+
+    function removeMandatoryExpense(btnElement) {
+        btnElement.parentElement.remove();
+        calculate();
+    }
+
+    /* =========================================================
+       УТИЛИТЫ
+       ========================================================= */
+    function parseNumberValid(val) {
+        if (!val) return 0;
+        let parsed = parseFloat(String(val).replace(/\s/g, '').replace(',', '.'));
+        return isNaN(parsed) ? 0 : parsed;
+    }
+
+    function formatMoney(amount) {
+        return amount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽';
+    }
+
+    function roundMoney(num) {
+        return Math.round(num * 100) / 100;
+    }
+
+    /* =========================================================
+       ТАБЛИЦА ДНЕЙ
+       ========================================================= */
+    function renderTracker() {
+        let days = parseInt(document.getElementById('days-in-month').value) || 31;
+        if (days < 1) days = 1;
+        if (days > 31) days = 31;
+
+        let newExpenses = new Array(days).fill(0);
+        for (let i = 0; i < Math.min(days, dailyExpenses.length); i++) {
+            newExpenses[i] = dailyExpenses[i];
+        }
+        dailyExpenses = newExpenses;
+
+        let tbody = document.getElementById('tracker-body');
+        tbody.innerHTML = '';
+
+        for (let i = 0; i < days; i++) {
+            let tr = document.createElement('tr');
+            let valText = dailyExpenses[i] === 0 ? '' : dailyExpenses[i];
+
+            tr.innerHTML = `
+                <td>День ${i + 1}</td>
+                <td class="text-right">
+                    <input type="text" inputmode="decimal" value="${valText}"
+                           placeholder="0" oninput="updateExpense(${i}, this.value)">
+                </td>
+                <td class="text-right font-bold" id="saldo-${i}">0.00 ₽</td>
+            `;
+            tbody.appendChild(tr);
+        }
+        calculate();
+    }
+
+    function updateExpense(dayIndex, val) {
+        dailyExpenses[dayIndex] = parseNumberValid(val);
+        calculate();
+    }
+
+    /* =========================================================
+       РАСЧЁТ
+       ========================================================= */
+    function calculate() {
+        let income = parseNumberValid(document.getElementById('total-income').value);
+        let days = parseInt(document.getElementById('days-in-month').value) || 31;
+
+        let totalFixed = 0;
+        document.querySelectorAll('.mandatory-amount').forEach(input => {
+            totalFixed += parseNumberValid(input.value);
+        });
+
+        document.getElementById('fixed-total-sum').innerText = formatMoney(totalFixed);
+
+        let leftover = roundMoney(income - totalFixed);
+        let dailyBudget = roundMoney(leftover / days);
+
+        document.getElementById('leftover').innerText = formatMoney(leftover);
+        document.getElementById('daily-budget').innerText = formatMoney(dailyBudget);
+
+        let currentSaldo = 0;
+        for (let i = 0; i < days; i++) {
+            currentSaldo = roundMoney(currentSaldo + dailyBudget - dailyExpenses[i]);
+            let saldoCell = document.getElementById(`saldo-${i}`);
+
+            if (saldoCell) {
+                saldoCell.innerText = formatMoney(currentSaldo);
+                if (currentSaldo < -0.01) {
+                    saldoCell.style.color = 'var(--negative)';
+                } else if (currentSaldo > 0.01) {
+                    saldoCell.style.color = 'var(--positive)';
+                } else {
+                    saldoCell.style.color = 'var(--text-main)';
+                }
+            }
+        }
+    }
+
+    /* =========================================================
+       ЭКСПОРТ В EXCEL
+       ========================================================= */
+    async function exportToExcelXLSX() {
+        const btn = document.getElementById('export-btn');
+        const originalText = btn.innerText;
+        btn.innerText = "Формирование файла...";
+        btn.disabled = true;
+
+        try {
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Архитектура Бюджета', { views: [{ showGridLines: false }] });
+
+            const fillBlack = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF171717' } };
+            const fillGold = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD4AF37' } };
+            const fontGold = { name: 'Arial', color: { argb: 'FFD4AF37' }, bold: true, size: 12 };
+            const fontBlackBold = { name: 'Arial', color: { argb: 'FF000000' }, bold: true };
+            const borderThin = {
+                top: {style:'thin', color: {argb:'FF333333'}}, left: {style:'thin', color: {argb:'FF333333'}},
+                bottom: {style:'thin', color: {argb:'FF333333'}}, right: {style:'thin', color: {argb:'FF333333'}}
+            };
+            const numberFormat = '#,##0.00 [$₽-ru-RU]';
+
+            sheet.columns = [ { width: 35 }, { width: 20 }, { width: 25 } ];
+
+            sheet.mergeCells('A1:C1');
+            const titleCell = sheet.getCell('A1');
+            titleCell.value = 'СВОДКА | КУРС «ДЕНЬГИ В ПОРЯДКЕ»';
+            titleCell.fill = fillBlack;
+            titleCell.font = fontGold;
+            titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+            let income = parseNumberValid(document.getElementById('total-income').value);
+            let days = parseInt(document.getElementById('days-in-month').value) || 31;
+
+            let mandatoryRows = [];
+            let totalFixed = 0;
+            document.querySelectorAll('.expense-row').forEach(row => {
+                let cat = row.querySelector('.mandatory-category').value;
+                let amt = parseNumberValid(row.querySelector('.mandatory-amount').value);
+                mandatoryRows.push(['   ' + cat, amt, '']);
+                totalFixed += amt;
+            });
+
+            let leftover = roundMoney(income - totalFixed);
+            let dailyBudget = roundMoney(leftover / days);
+
+            const summaryData = [
+                ['Общий доход', income, ''],
+                ['--- ОБЯЗАТЕЛЬНЫЕ ТРАТЫ ---', '', '']
+            ];
+
+            mandatoryRows.forEach(mr => summaryData.push(mr));
+
+            summaryData.push(['ИТОГО ОБЯЗАТЕЛЬНЫХ', totalFixed, '']);
+            summaryData.push(['Свободная дельта', leftover, '']);
+            summaryData.push(['Лимит на день', dailyBudget, '']);
+            summaryData.push(['Горизонт (дней)', days, '']);
+
+            summaryData.forEach((row) => {
+                const rowObj = sheet.addRow(row);
+                const isHeaderLine = row[0] === '--- ОБЯЗАТЕЛЬНЫЕ ТРАТЫ ---';
+                const isSubItem = String(row[0]).startsWith('   ');
+
+                if (isHeaderLine) {
+                    sheet.mergeCells(`A${rowObj.number}:C${rowObj.number}`);
+                    rowObj.getCell(1).font = { name: 'Arial', color: { argb: 'FF8A8A8A' }, bold: true };
+                    rowObj.getCell(1).alignment = { horizontal: 'center' };
+                } else {
+                    rowObj.getCell(1).font = isSubItem ? { name: 'Arial', color: { argb: 'FF000000' } } : fontBlackBold;
+                    rowObj.getCell(1).fill = isSubItem ? { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } } : fillGold;
+                    rowObj.getCell(1).border = borderThin;
+
+                    if (row[1] !== '') {
+                        rowObj.getCell(2).font = fontBlackBold;
+                        rowObj.getCell(2).fill = isSubItem ? { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } } : fillGold;
+                        rowObj.getCell(2).border = borderThin;
+                        if (row[0] !== 'Горизонт (дней)') rowObj.getCell(2).numFmt = numberFormat;
+                    }
+                }
+            });
+
+            sheet.addRow([]);
+            const headerRow = sheet.addRow(['День', 'Траты (₽)', 'Остаток (Сальдо)']);
+            headerRow.eachCell(cell => {
+                cell.fill = fillBlack;
+                cell.font = fontGold;
+                cell.alignment = { horizontal: 'center' };
+                cell.border = borderThin;
+            });
+
+            let currentSaldo = 0;
+            for (let i = 0; i < days; i++) {
+                let expense = roundMoney(dailyExpenses[i] || 0);
+                currentSaldo = roundMoney(currentSaldo + dailyBudget - expense);
+
+                const dataRow = sheet.addRow([`День ${i + 1}`, expense, currentSaldo]);
+                dataRow.getCell(1).border = borderThin;
+
+                const expenseCell = dataRow.getCell(2);
+                expenseCell.numFmt = numberFormat;
+                expenseCell.border = borderThin;
+
+                const saldoCell = dataRow.getCell(3);
+                saldoCell.numFmt = numberFormat;
+                saldoCell.border = borderThin;
+                saldoCell.font = { bold: true };
+
+                if (currentSaldo < 0) {
+                    saldoCell.font = { color: { argb: 'FFE57373' }, bold: true };
+                } else if (currentSaldo > 0) {
+                    saldoCell.font = { color: { argb: 'FF4CAF50' }, bold: true };
+                }
+            }
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            const dateStr = new Date().toLocaleDateString('ru-RU').replace(/\./g, '_');
+
+            link.href = url;
+            link.download = `Архитектура_Бюджета_${dateStr}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error("Ошибка при формировании Excel:", error);
+            alert("Не удалось сформировать файл. Проверьте браузер.");
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+</script>
+
+</body>
+</html>

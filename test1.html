@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест 1: Точка А | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+<style>
+        :root {
+            --bg-dark: #000000;
+            --surface: #171717;
+            --surface-hover: #262626;
+            --gold-primary: #d4af37;
+            --gold-light: #fde08b;
+            --text-main: #ffffff;
+            --text-muted: #a3a3a3;
+            --success: #4caf50;
+            --error: #e57373;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', sans-serif; background-color: var(--bg-dark);
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; color: var(--text-main);
+        }
+
+        .mobile-container {
+            width: 100%; max-width: 450px; min-height: 100vh;
+            background-color: var(--surface); display: flex; flex-direction: column;
+        }
+
+        .header {
+            padding: 40px 20px 15px; background: rgba(23, 23, 23, 0.95);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex;
+            justify-content: space-between; align-items: center;
+        }
+
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); font-weight: 600; }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; }
+
+        .progress-bar { height: 4px; background: #333; width: 100%; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold-primary), var(--gold-light)); width: 0%; transition: width 0.3s ease; }
+
+        .quiz-content { flex: 1; padding: 30px 20px; overflow-y: auto; display: flex; flex-direction: column; }
+        
+        .question-text { font-size: 1.1rem; line-height: 1.4; margin-bottom: 25px; font-weight: 500; }
+        .question-hint { font-size: 11px; color: var(--gold-primary); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .options-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; }
+        .option-btn {
+            background: var(--bg-dark); border: 1px solid #333; padding: 16px; border-radius: 12px;
+            color: var(--text-main); font-size: 15px; text-align: left; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; line-height: 1.4; font-family: 'Inter', sans-serif;
+        }
+        .option-btn:hover { border-color: rgba(212, 175, 55, 0.4); }
+        .option-btn.selected { border-color: var(--gold-primary); background: rgba(212, 175, 55, 0.1); }
+        .option-btn.correct { border-color: var(--success); background: rgba(76, 175, 80, 0.1); }
+        .option-btn.wrong { border-color: var(--error); background: rgba(229, 115, 115, 0.1); }
+
+        .check-box {
+            width: 20px; height: 20px; border: 2px solid #555; border-radius: 4px; margin-right: 12px;
+            display: flex; justify-content: center; align-items: center; flex-shrink: 0;
+        }
+        .selected .check-box { border-color: var(--gold-primary); background: var(--gold-primary); }
+        .selected .check-box::after { content: '✓'; color: #000; font-size: 14px; font-weight: bold; }
+
+        .feedback-panel {
+            background: var(--bg-dark); padding: 20px; border-radius: 12px; margin-bottom: 20px;
+            display: none; border-left: 4px solid var(--gold-primary); border: 1px solid #333; border-left-width: 4px;
+        }
+        .feedback-panel.visible { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .feedback-title { font-weight: 600; margin-bottom: 10px; font-size: 16px; }
+        .feedback-text { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+        .action-btn {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); color: #000;
+            border: none; padding: 16px; border-radius: 12px; font-weight: 600; font-size: 16px;
+            width: 100%; cursor: pointer; margin-top: auto; display: none; font-family: 'Inter', sans-serif;
+            transition: transform 0.2s;
+        }
+        .action-btn:active { transform: scale(0.98); }
+        .action-btn.visible { display: block; }
+
+        .result-screen { text-align: center; display: none; flex-direction: column; justify-content: center; align-items: center; height: 100%; }
+        .score-circle {
+            width: 130px; height: 130px; border-radius: 50%; border: 4px solid var(--gold-primary);
+            display: flex; justify-content: center; align-items: center; font-size: 36px;
+            color: var(--gold-light); margin: 0 auto 30px; font-family: 'Playfair Display', serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='index.html'">←</button>
+            <div class="header-title">
+                <h1>Проверка знаний</h1>
+                <p id="progressText">Вопрос 1 из 5</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+        
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+        <div class="quiz-content" id="quizScreen">
+            <div class="question-hint" id="questionHint">Выберите один вариант</div>
+            <h2 class="question-text" id="questionText">Текст вопроса</h2>
+            <div class="options-container" id="optionsContainer"></div>
+            
+            <div class="feedback-panel" id="feedbackPanel">
+                <div class="feedback-title" id="feedbackTitle">Правильно!</div>
+                <div class="feedback-text" id="feedbackText">Пояснение.</div>
+            </div>
+
+            <button class="action-btn" id="nextBtn">Далее</button>
+            <button class="action-btn" id="checkBtn" style="display: none;">Проверить</button>
+        </div>
+
+        <div class="quiz-content result-screen" id="resultScreen">
+            <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 20px; color: var(--gold-light); font-size: 24px;">Модуль 1 пройден!</h2>
+            <div class="score-circle" id="scoreDisplay">0/5</div>
+            <p style="color: var(--text-muted); margin-bottom: 30px; text-align: center; line-height: 1.5;">Отлично! Вы зафиксировали свою Точку А и поняли, как инфляция влияет на ваши цели. Ваш прогресс сохранен.</p>
+            <button class="action-btn visible" onclick="window.location.href='index.html'">Вернуться в главное меню</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                type: 'single',
+                text: 'Почему высокий доход (зарплата) не является показателем богатства?',
+                options: [
+                    'Потому что инфляция обесценивает зарплату',
+                    'Потому что человек может тратить больше, чем зарабатывает, оставаясь в долгах',
+                    'Потому что налоги забирают бóльшую часть'
+                ],
+                correct: [1],
+                explanation: 'Вы можете зарабатывать 500 000 ₽, но если ваши расходы составляют 550 000 ₽, вы становитесь беднее каждый месяц.'
+            },
+            {
+                type: 'single',
+                text: 'По какой формуле рассчитывается ваш Личный капитал (Net Worth)?',
+                options: [
+                    'Доходы минус Расходы',
+                    'Активы минус Пассивы (Долги)',
+                    'Стоимость недвижимости минус инфляция'
+                ],
+                correct: [1],
+                explanation: 'Net Worth (Чистая стоимость) — это единственная объективная метрика вашего богатства. Всё, что можно продать, минус всё, что вы должны.'
+            },
+            {
+                type: 'single',
+                text: 'Что из перечисленного является Пассивом?',
+                options: [
+                    'Деньги на банковском вкладе',
+                    'Остаток долга по автокредиту',
+                    'Купленные акции'
+                ],
+                correct: [1],
+                explanation: 'Пассивы — это ваши долги. То, что вытягивает деньги из вашего кармана.'
+            },
+            {
+                type: 'single',
+                text: 'Что произойдет с вашей финансовой целью (например, покупка машины), если вы будете копить деньги "в тумбочке" 5 лет?',
+                options: [
+                    'Она станет дешевле из-за скидок',
+                    'Она подорожает из-за инфляции, и накопленных денег не хватит',
+                    'Ничего не изменится'
+                ],
+                correct: [1],
+                explanation: 'Инфляция — это скрытый налог. Цены растут, и если ваши накопления не работают, они теряют свою покупательную способность.'
+            },
+            {
+                type: 'single',
+                text: 'Какое главное правило при оцифровке долгосрочной цели?',
+                options: [
+                    'Умножать стоимость на два',
+                    'Закладывать процент инфляции, чтобы понимать реальную стоимость вещи в будущем',
+                    'Копить только в иностранной валюте'
+                ],
+                correct: [1],
+                explanation: 'Чтобы цель не "убегала" от вас, при расчетах всегда закладывайте ежегодное удорожание (инфляцию).'
+            }
+        ];
+
+        let currentQ = 0;
+        let score = 0;
+        let selectedAnswers = [];
+        let isAnswered = false;
+
+        const qText = document.getElementById('questionText');
+        const qHint = document.getElementById('questionHint');
+        const optContainer = document.getElementById('optionsContainer');
+        const feedback = document.getElementById('feedbackPanel');
+        const fTitle = document.getElementById('feedbackTitle');
+        const fText = document.getElementById('feedbackText');
+        const nextBtn = document.getElementById('nextBtn');
+        const checkBtn = document.getElementById('checkBtn');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+
+        function loadQuestion() {
+            isAnswered = false;
+            selectedAnswers = [];
+            feedback.classList.remove('visible');
+            nextBtn.classList.remove('visible');
+            
+            const q = questions[currentQ];
+            qText.textContent = q.text;
+            qHint.textContent = 'Выберите один вариант';
+            
+            progressText.textContent = `Вопрос ${currentQ + 1} из ${questions.length}`;
+            progressFill.style.width = `${((currentQ) / questions.length) * 100}%`;
+            
+            optContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'option-btn';
+                btn.innerHTML = `<div class="check-box"></div> <span>${opt}</span>`;
+                btn.onclick = () => selectOption(index, btn);
+                optContainer.appendChild(btn);
+            });
+
+            checkBtn.style.display = 'none';
+        }
+
+        function selectOption(index, btnElem) {
+            if (isAnswered) return;
+            selectedAnswers = [index];
+            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+            btnElem.classList.add('selected');
+            processAnswer();
+        }
+
+        function processAnswer() {
+            isAnswered = true;
+            const q = questions[currentQ];
+            const btns = document.querySelectorAll('.option-btn');
+            
+            const isCorrect = selectedAnswers[0] === q.correct[0];
+
+            if (isCorrect) {
+                score++;
+                fTitle.textContent = 'Верно!';
+                fTitle.style.color = 'var(--success)';
+            } else {
+                fTitle.textContent = 'Не совсем так';
+                fTitle.style.color = 'var(--error)';
+            }
+
+            fText.textContent = q.explanation;
+            feedback.classList.add('visible');
+            nextBtn.classList.add('visible');
+
+            btns.forEach((btn, idx) => {
+                if (q.correct.includes(idx)) {
+                    btn.classList.add('correct');
+                } else if (selectedAnswers.includes(idx)) {
+                    btn.classList.add('wrong');
+                }
+                btn.style.pointerEvents = 'none';
+            });
+        }
+
+        nextBtn.onclick = () => {
+            currentQ++;
+            if (currentQ < questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        };
+
+        function showResults() {
+            document.getElementById('quizScreen').style.display = 'none';
+            progressFill.style.width = '100%';
+            progressText.textContent = 'Завершено';
+            
+            const resScreen = document.getElementById('resultScreen');
+            resScreen.style.display = 'flex';
+            document.getElementById('scoreDisplay').textContent = `${score}/${questions.length}`;
+
+            // Сохранение прогресса модуля
+            localStorage.setItem('module1_completed', 'true');
+        }
+
+        loadQuestion();
+    </script>
+</body>
+</html>

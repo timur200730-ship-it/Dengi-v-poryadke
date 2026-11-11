@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Финансовое Колесо Баланса | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    
+    <!-- Возвращаем проверенные рабочие версии библиотек -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --success: #4caf50; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        .section-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold-light); margin-bottom: 15px; }
+
+        /* Слайдеры */
+        .slider-card { background: var(--surface); border: 1px solid var(--border-color); border-radius: 14px; padding: 15px; margin-bottom: 12px; }
+        .slider-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; margin-bottom: 12px; color: var(--text-main); }
+        .slider-val { color: var(--gold-light); font-family: 'Playfair Display', serif; font-weight: 600; font-size: 15px; }
+        
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: var(--gold-primary); cursor: pointer; margin-top: -8px; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
+        input[type=range]:focus { outline: none; }
+
+        /* Контейнер графика */
+        .chart-container { background: var(--surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 10px; margin-bottom: 20px; position: relative; height: 320px; display: flex; justify-content: center; align-items: center; }
+
+        /* Блоки рекомендаций и целей */
+        .recommendation-box { background: rgba(212, 175, 55, 0.05); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 20px; font-size: 13px; color: var(--text-muted); line-height: 1.5; text-align: center; }
+        .recommendation-box strong { color: var(--gold-light); }
+
+        .input-group { background: var(--surface); border: 1px solid var(--border-color); border-radius: 14px; padding: 15px; margin-bottom: 15px; }
+        .input-label { display: block; font-size: 12px; color: var(--gold-primary); font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .wb-textarea { width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px; border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; resize: vertical; min-height: 80px; }
+        .wb-textarea:focus { border-color: var(--gold-primary); }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .btn-export { width: 100%; padding: 14px; border-radius: 12px; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-pdf { width: 100%; padding: 14px; border-radius: 12px; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
+
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            .mobile-container { max-width: 100% !important; box-shadow: none !important; }
+            .header, .bottom-action, .back-btn { display: none !important; }
+            .slider-card, .chart-container, .recommendation-box, .input-group { background: #fff !important; border: 1px solid #ccc !important; color: #000 !important; page-break-inside: avoid; }
+            .slider-header, .slider-val, .input-label { color: #000 !important; }
+            .wb-textarea { background: #f9f9f9 !important; border: 1px solid #ddd !important; color: #000 !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='./index.html'">←</button>
+            <div class="header-title">
+                <h1>Колесо Баланса</h1>
+                <p>Аудит финансовой сферы</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content">
+            
+            <h2 class="section-title">Оцените сферы от 1 до 10</h2>
+            
+            <div id="slidersContainer"></div>
+
+            <h2 class="section-title" style="margin-top: 25px;">Визуализация баланса</h2>
+            <div class="chart-container">
+                <canvas id="balanceChart"></canvas>
+            </div>
+
+            <div class="recommendation-box" id="recommendationText">
+                💡 Перемещайте ползунки, чтобы получить персональный финансовый совет.
+            </div>
+
+            <h2 class="section-title" style="margin-top: 25px;">Выводы и приоритеты</h2>
+            
+            <div class="input-group">
+                <label class="input-label">Краткосрочные шаги (1-3 месяца)</label>
+                <textarea class="wb-textarea" id="shortTermText" placeholder="Напишите 2-3 конкретных шага..." oninput="saveTexts()"></textarea>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Долгосрочный фокус (от 6 месяцев)</label>
+                <textarea class="wb-textarea" id="longTermText" placeholder="Ваша главная финансовая цель..." oninput="saveTexts()"></textarea>
+            </div>
+
+        </div>
+
+        <div class="bottom-action">
+            <button class="btn-pdf" onclick="window.print()">📥 Сохранить в PDF</button>
+            <button class="btn-export" onclick="exportExcel()">Скачать отчет в Excel</button>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'financial_balance_data';
+        const TEXT_KEY = 'financial_balance_texts';
+        
+        // Полные названия для ползунков, короткие - для графика
+        const categories = [
+            { id: 'income', name: '1. Уровень доходов', short: 'Доходы', val: 5 },
+            { id: 'control', name: '2. Учет расходов', short: 'Учет', val: 5 },
+            { id: 'safety', name: '3. Подушка безопасности', short: 'Подушка', val: 5 },
+            { id: 'debts', name: '4. Отсутствие долгов', short: 'Долги', val: 5 },
+            { id: 'invest', name: '5. Инвестиции и капитал', short: 'Инвестиции', val: 5 },
+            { id: 'goals', name: '6. Четкие фин. цели', short: 'Цели', val: 5 },
+            { id: 'growth', name: '7. Грамотность', short: 'Знания', val: 5 },
+            { id: 'sources', name: '8. Источники дохода', short: 'Источники', val: 5 }
+        ];
+
+        let chartInstance = null;
+
+        function renderSliders() {
+            const container = document.getElementById('slidersContainer');
+            container.innerHTML = '';
+            
+            categories.forEach((cat, index) => {
+                container.innerHTML += `
+                    <div class="slider-card">
+                        <div class="slider-header">
+                            <span>${cat.name}</span>
+                            <span class="slider-val" id="val_${cat.id}">${cat.val}</span>
+                        </div>
+                        <input type="range" min="1" max="10" step="1" value="${cat.val}" oninput="updateCategory(${index}, this.value)">
+                    </div>
+                `;
+            });
+            updateChartAndAnalysis();
+        }
+
+        function updateCategory(index, value) {
+            categories[index].val = parseInt(value);
+            document.getElementById(`val_${categories[index].id}`).textContent = categories[index].val;
+            
+            const saveData = {};
+            categories.forEach(c => saveData[c.id] = c.val);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+
+            updateChartAndAnalysis();
+        }
+
+        function loadData() {
+            // Загрузка ползунков
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    categories.forEach(c => {
+                        if (data[c.id] !== undefined) c.val = data[c.id];
+                    });
+                } catch(e) {}
+            }
+            // Загрузка текстов
+            const savedTexts = localStorage.getItem(TEXT_KEY);
+            if (savedTexts) {
+                try {
+                    const texts = JSON.parse(savedTexts);
+                    document.getElementById('shortTermText').value = texts.shortTerm || '';
+                    document.getElementById('longTermText').value = texts.longTerm || '';
+                } catch(e) {}
+            }
+        }
+
+        function saveTexts() {
+            const texts = {
+                shortTerm: document.getElementById('shortTermText').value,
+                longTerm: document.getElementById('longTermText').value
+            };
+            localStorage.setItem(TEXT_KEY, JSON.stringify(texts));
+        }
+
+        function updateChartAndAnalysis() {
+            const ctx = document.getElementById('balanceChart').getContext('2d');
+            const labels = categories.map(c => c.short); // Используем короткие слова
+            const dataVals = categories.map(c => c.val);
+
+            // Если график уже есть, плавно обновляем данные
+            if (chartInstance) {
+                chartInstance.data.datasets[0].data = dataVals;
+                chartInstance.update();
+            } else {
+                // Создаем график один раз
+                chartInstance = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Уровень',
+                            data: dataVals,
+                            backgroundColor: 'rgba(212, 175, 55, 0.4)', 
+                            borderColor: '#d4af37',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#fde08b',
+                            pointBorderColor: '#000',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: 20 // ДОБАВЛЯЕМ ОТСТУП, чтобы слова не резались
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            r: {
+                                min: 0, // Жесткий минимум
+                                max: 10, // Жесткий максимум (чинит дерганье при переходе с 5 на 6)
+                                ticks: {
+                                    stepSize: 2,
+                                    display: false // Скрываем цифры на осях для эстетики
+                                },
+                                grid: { color: 'rgba(255, 255, 255, 0.15)', circular: true },
+                                angleLines: { color: 'rgba(255, 255, 255, 0.15)' },
+                                pointLabels: { color: '#fde08b', font: { size: 11, family: 'Inter' } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Обновляем рекомендацию
+            let minCat = [...categories].sort((a,b) => a.val - b.val)[0];
+            document.getElementById('recommendationText').innerHTML = `💡 <strong>Зона роста:</strong> Ваша самая уязвимая сфера сейчас — <strong>«${minCat.name}»</strong> (оценка ${minCat.val}/10). Рекомендуем сфокусировать усилия именно здесь.`;
+        }
+
+        async function exportExcel() {
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Финансовый баланс');
+            ws.columns = [{width: 35}, {width: 15}];
+
+            ws.addRow(['ФИНАНСОВОЕ КОЛЕСО БАЛАНСА']).font = {bold: true, size: 14, color: {argb: 'FFD4AF37'}};
+            ws.addRow([]);
+            ws.addRow(['Сфера жизни', 'Оценка (1-10)']).font = {bold: true};
+
+            categories.forEach(c => {
+                ws.addRow([c.name, c.val]);
+            });
+
+            ws.addRow([]);
+            ws.addRow(['ВЫВОДЫ И ЦЕЛИ']).font = {bold: true};
+            ws.addRow(['Краткосрочные шаги:', document.getElementById('shortTermText').value]);
+            ws.addRow(['Долгосрочный фокус:', document.getElementById('longTermText').value]);
+
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `Financial_Balance.xlsx`; link.click();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderSliders();
+        });
+    </script>
+</body>
+</html>

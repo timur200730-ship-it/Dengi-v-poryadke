@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест 3: Безопасность | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --success: #4caf50; --error: #e57373; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--surface); display: flex; flex-direction: column; }
+        .header { padding: 40px 20px 15px; background: rgba(23, 23, 23, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .progress-bar { height: 4px; background: #333; width: 100%; }
+        .progress-fill { height: 100%; background: var(--gold-primary); width: 0%; transition: 0.3s; }
+        .quiz-content { flex: 1; padding: 30px 20px; overflow-y: auto; display: flex; flex-direction: column; }
+        .question-text { font-size: 1.1rem; line-height: 1.4; margin-bottom: 25px; font-weight: 500; }
+        .options-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; }
+        .option-btn { background: var(--bg-dark); border: 1px solid #333; padding: 16px; border-radius: 12px; font-size: 15px; cursor: pointer; display: flex; align-items: center; }
+        .option-btn.selected { border-color: var(--gold-primary); background: rgba(212, 175, 55, 0.1); }
+        .option-btn.correct { border-color: var(--success); background: rgba(76, 175, 80, 0.1); }
+        .option-btn.wrong { border-color: var(--error); background: rgba(229, 115, 115, 0.1); }
+        .check-box { width: 20px; height: 20px; border: 2px solid #555; border-radius: 4px; margin-right: 12px; display: flex; justify-content: center; align-items: center; }
+        .selected .check-box { background: var(--gold-primary); border-color: var(--gold-primary); }
+        .selected .check-box::after { content: '✓'; color: #000; font-size: 14px; font-weight: bold; }
+        .feedback-panel { background: var(--bg-dark); padding: 20px; border-radius: 12px; display: none; border-left: 4px solid var(--gold-primary); margin-bottom: 20px; }
+        .feedback-panel.visible { display: block; }
+        .action-btn { background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); color: #000; border: none; padding: 16px; border-radius: 12px; font-weight: 600; width: 100%; cursor: pointer; display: none; }
+        .action-btn.visible { display: block; }
+        .result-screen { display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 100%; }
+        .score-circle { width: 130px; height: 130px; border-radius: 50%; border: 4px solid var(--gold-primary); display: flex; justify-content: center; align-items: center; font-size: 36px; color: var(--gold-light); margin-bottom: 30px; font-family: 'Playfair Display', serif;}
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='lesson3.html'">←</button>
+            <div class="header-title"><h1>Проверка знаний</h1></div>
+            <div style="width: 24px;"></div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        
+        <div class="quiz-content" id="quizScreen">
+            <h2 class="question-text" id="questionText">Текст вопроса</h2>
+            <div class="options-container" id="optionsContainer"></div>
+            <div class="feedback-panel" id="feedbackPanel"><strong id="feedbackTitle"></strong><p id="feedbackText" style="margin-top: 5px; font-size: 14px; color: var(--text-muted);"></p></div>
+            <button class="action-btn" id="nextBtn">Далее</button>
+        </div>
+
+        <div class="result-screen" id="resultScreen" style="padding: 30px;">
+            <h2 style="font-family: 'Playfair Display', serif; color: var(--gold-light); margin-bottom: 20px;">Модуль 3 пройден!</h2>
+            <div class="score-circle" id="scoreDisplay">0/5</div>
+            <p style="color: var(--text-muted); margin-bottom: 30px;">Вы заложили основу финансовой безопасности. Прогресс сохранен!</p>
+            <button class="action-btn visible" onclick="window.location.href='index.html'">Вернуться в главное меню</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { text: 'Какое главное правило нужно соблюдать до начала активного погашения долгов?', options: ['Устроиться на вторую работу', 'Ввести "заморозку": не брать новые кредиты и не увеличивать лимиты', 'Потратить остаток с кредитки'], correct: 1, explanation: 'Перед тушением пожара нужно перестать подливать масло. Мораторий на новые долги обязателен.' },
+            { text: 'Как работает стратегия "Снежный ком"?', options: ['Сначала гасим кредит с самой большой ставкой', 'Платим поровну за все кредиты', 'Сначала досрочно закрываем самый маленький долг'], correct: 2, explanation: 'Это психологическая стратегия. Закрытие самого маленького долга дает всплеск дофамина и мотивацию.' },
+            { text: 'Что такое "эффект Лавины" в гашении кредитов?', options: ['Досрочное закрытие долга с максимальной процентной ставкой', 'Объединение всех долгов в один', 'Отказ от выплат'], correct: 0, explanation: 'Лавина — математически самый выгодный метод, где все свободные деньги идут на самый "дорогой" кредит.' },
+            { text: 'В чем суть Правила 90/10 при гашении долгов?', options: ['90% отдаем банку, 10% тратим на себя', 'Даже при агрессивном гашении долгов (90%), мы 10% от свободных денег откладываем в резерв (микро-подушку)', '90% откладываем, 10% отдаем за долги'], correct: 1, explanation: 'Без резерва любая экстренная трата (лечение, ремонт) заставит вас снова взять кредит. Микро-подушка обязательна.' },
+            { text: 'Какой показатель DTI (долговой нагрузки) считается опасным?', options: ['Выше 10%', 'От 30% до 50%', 'Выше 50%'], correct: 2, explanation: 'Если платежи по долгам забирают более 50% вашего дохода, это критический уровень, требующий немедленной оптимизации (рефинансирования).' }
+        ];
+
+        let currentQ = 0, score = 0, isAnswered = false;
+
+        function loadQuestion() {
+            isAnswered = false;
+            document.getElementById('feedbackPanel').classList.remove('visible');
+            document.getElementById('nextBtn').classList.remove('visible');
+            document.getElementById('progressFill').style.width = `${(currentQ / questions.length) * 100}%`;
+            document.getElementById('questionText').textContent = questions[currentQ].text;
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+            questions[currentQ].options.forEach((opt, idx) => {
+                const btn = document.createElement('div');
+                btn.className = 'option-btn';
+                btn.innerHTML = `<div class="check-box"></div> <span>${opt}</span>`;
+                btn.onclick = () => selectOption(idx, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectOption(idx, btn) {
+            if (isAnswered) return;
+            isAnswered = true;
+            btn.classList.add('selected');
+            const q = questions[currentQ];
+            const btns = document.querySelectorAll('.option-btn');
+            
+            if (idx === q.correct) {
+                score++;
+                document.getElementById('feedbackTitle').textContent = 'Верно!';
+                document.getElementById('feedbackTitle').style.color = 'var(--success)';
+            } else {
+                document.getElementById('feedbackTitle').textContent = 'Не совсем так';
+                document.getElementById('feedbackTitle').style.color = 'var(--error)';
+            }
+            
+            document.getElementById('feedbackText').textContent = q.explanation;
+            document.getElementById('feedbackPanel').classList.add('visible');
+            document.getElementById('nextBtn').classList.add('visible');
+
+            btns.forEach((b, i) => {
+                b.style.pointerEvents = 'none';
+                if (i === q.correct) b.classList.add('correct');
+                else if (i === idx) b.classList.add('wrong');
+            });
+        }
+
+        document.getElementById('nextBtn').onclick = () => {
+            currentQ++;
+            if (currentQ < questions.length) loadQuestion();
+            else {
+                document.getElementById('quizScreen').style.display = 'none';
+                document.getElementById('resultScreen').style.display = 'flex';
+                document.getElementById('progressFill').style.width = '100%';
+                document.getElementById('scoreDisplay').textContent = `${score}/${questions.length}`;
+                localStorage.setItem('module3_completed', 'true');
+            }
+        };
+
+        loadQuestion();
+    </script>
+</body>
+</html>

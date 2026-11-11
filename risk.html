@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конструктор риск-профиля | Деньги в порядке</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* Единая строгая темная цветовая схема курса */
+            --bg-color: #121418;
+            --panel-bg: #1e2128;
+            --text-main: #f5f5f5;
+            --text-muted: #8b92a5;
+            --accent-color: #d4af37; 
+            --accent-hover: #e5c354;
+            --card-bg: rgba(18, 20, 24, 0.6);
+            --card-border: #2a2f3a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .header { text-align: center; margin-bottom: 20px; }
+        
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 300;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            color: var(--accent-color);
+            font-size: 0.85rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* Информационные блоки */
+        .info-panel {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 30px;
+            border-left: 4px solid var(--accent-color);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .info-panel h2 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-panel p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 10px; }
+        .info-panel strong { color: var(--text-main); font-weight: 500; }
+
+        .app-container {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+
+        /* Стилизация опросника */
+        .question-block { margin-bottom: 35px; }
+        .question-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: var(--text-main);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .option-card {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 10px;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-card:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        .option-card.selected {
+            border-color: var(--accent-color);
+            background: rgba(212, 175, 55, 0.1);
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .btn-submit {
+            background: var(--accent-color);
+            color: #121418;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover { background: var(--accent-hover); }
+        .btn-submit:disabled { background: #3a404d; color: #8b92a5; cursor: not-allowed; }
+
+        /* Блок результатов (изначально скрыт) */
+        #result-section {
+            display: none;
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 1px solid var(--card-border);
+            animation: fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .result-text { flex: 1; min-width: 300px; }
+        .result-text h3 {
+            font-size: 1.8rem;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        .result-text p { color: var(--text-muted); margin-bottom: 20px; }
+
+        .chart-container {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .app-container, .info-panel { padding: 25px; }
+            .header h1 { font-size: 1.6rem; }
+            .chart-container { height: 250px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="header">
+            <h1>Риск-профиль инвестора</h1>
+            <div class="subtitle">Деньги в порядке</div>
+        </div>
+
+        <div class="info-panel">
+            <h2>Архитектура вашего портфеля</h2>
+            <p>Успешные инвестиции начинаются не с выбора конкретных акций, а с понимания собственной психологии. Ответьте на 4 вопроса, чтобы узнать свою устойчивость к риску и получить математически обоснованную структуру распределения активов.</p>
+        </div>
+
+        <div class="app-container">
+            <!-- Опросник -->
+            <div id="quiz-section">
+                <!-- Вопрос 1 -->
+                <div class="question-block" data-q="1">
+                    <div class="question-title">1. На какой срок вы планируете инвестировать эти средства?</div>
+                    <div class="options-grid">
+                        <div class="option-card" data-val="1">До 3 лет (коплю на конкретную цель)</div>
+                        <div class="option-card" data-val="2">От 3 до 7 лет (среднесрочные планы)</div>
+                        <div class="option-card" data-val="3">Более 7 лет (капитал на будущее / пенсию)</div>
+                    </div>
+                </div>
+
+                <!-- Вопрос 2 -->
+                <div class="question-block" data-q="2">
+                    <div class="question-title">2. Что вы сделаете, если ваш портфель за месяц упадет на 20%?</div>
+                    <div class="options-grid">
+                        <div class="option-card" data-val="1">Продам всё, чтобы не потерять остальное</div>
+                        <div class="option-card" data-val="2">Буду переживать, но ничего не сделаю (пережду)</div>
+                        <div class="option-card" data-val="3">Обрадуюсь скидкам и докуплю активы</div>
+                    </div>
+                </div>
+
+                <!-- Вопрос 3 -->
+                <div class="question-block" data-q="3">
+                    <div class="question-title">3. Какая из этих целей для вас сейчас в приоритете?</div>
+                    <div class="options-grid">
+                        <div class="option-card" data-val="1">Защитить деньги от инфляции, 100% без риска</div>
+                        <div class="option-card" data-val="2">Стабильный, но умеренный рост капитала</div>
+                        <div class="option-card" data-val="3">Максимальная доходность, даже если есть риск просадок</div>
+                    </div>
+                </div>
+
+                <!-- Вопрос 4 -->
+                <div class="question-block" data-q="4">
+                    <div class="question-title">4. Оцените ваш опыт в инвестициях:</div>
+                    <div class="options-grid">
+                        <div class="option-card" data-val="1">Только банковские вклады и наличные</div>
+                        <div class="option-card" data-val="2">Знаком с облигациями и базовыми фондами</div>
+                        <div class="option-card" data-val="3">Самостоятельно покупаю акции, понимаю рынок</div>
+                    </div>
+                </div>
+
+                <button class="btn-submit" id="btn-result" disabled>Рассчитать профиль</button>
+            </div>
+
+            <!-- Результаты (Скрыты по умолчанию) -->
+            <div id="result-section">
+                <div class="result-flex">
+                    <div class="result-text">
+                        <h3 id="profile-title">Ваш профиль</h3>
+                        <p id="profile-desc">Описание профиля появится здесь.</p>
+                        
+                        <div style="margin-top: 20px;">
+                            <strong>Рекомендуемая структура:</strong>
+                            <ul id="profile-list" style="color: var(--text-muted); margin-top: 10px; margin-left: 20px;">
+                                <!-- Сюда JS подставит список -->
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="portfolioChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="info-panel">
+            <h2>Коучинговый фокус</h2>
+            <p>Риск-профиль — это не приговор, а точка отсчета. Помните главное правило: <strong>доходность всегда пропорциональна риску</strong>.</p>
+            <p>Если инструмент выдал консервативный профиль, но вы хотите двузначных доходностей — вам придется осознанно работать над своей психологической устойчивостью к просадкам. Начните с рекомендуемой структуры и постепенно, по мере роста знаний на курсе, корректируйте её под новые цели.</p>
+        </div>
+
+    </div>
+
+    <script>
+        // Логика выбора карточек
+        const answers = { 1: null, 2: null, 3: null, 4: null };
+        const btnResult = document.getElementById('btn-result');
+        let chartInstance = null;
+
+        document.querySelectorAll('.question-block').forEach(block => {
+            const qNum = block.getAttribute('data-q');
+            const cards = block.querySelectorAll('.option-card');
+            
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    // Убираем выделение со всех карточек в этом вопросе
+                    cards.forEach(c => c.classList.remove('selected'));
+                    // Выделяем нажатую
+                    card.classList.add('selected');
+                    // Сохраняем ответ
+                    answers[qNum] = parseInt(card.getAttribute('data-val'));
+                    checkFormReady();
+                });
+            });
+        });
+
+        function checkFormReady() {
+            // Если на все 4 вопроса дан ответ, разблокируем кнопку
+            if (Object.values(answers).every(val => val !== null)) {
+                btnResult.removeAttribute('disabled');
+            }
+        }
+
+        // Данные профилей
+        const profiles = {
+            conservative: {
+                title: "Консервативный профиль",
+                desc: "Ваш приоритет — сохранение капитала и защита от инфляции. Вы не готовы к сильным колебаниям счета. Основой вашего портфеля должны стать надежные долговые инструменты с фиксированной доходностью.",
+                labels: ['Облигации (ОФЗ и корп. надежные)', 'Акции (дивидендные фишки)', 'Золото / Кэш'],
+                data: [75, 15, 10],
+                colors: ['#8b92a5', '#d4af37', '#3a404d']
+            },
+            moderate: {
+                title: "Умеренный (Сбалансированный)",
+                desc: "Вы ищете золотую середину между ростом капитала и защитой от потерь. Вы готовы терпеть временные просадки ради доходности выше инфляции. Это классический портфель долгосрочного инвестора.",
+                labels: ['Облигации', 'Акции (широкий рынок)', 'Золото / Альтернативы'],
+                data: [40, 50, 10],
+                colors: ['#8b92a5', '#d4af37', '#3a404d']
+            },
+            aggressive: {
+                title: "Агрессивный (Ростовой)",
+                desc: "Вы нацелены на максимальное приумножение капитала, у вас длинный горизонт планирования и стальные нервы. Падение рынка для вас — это повод купить активы со скидкой.",
+                labels: ['Облигации (для балансировки)', 'Акции (вкл. акции роста)', 'Крипта / Высокий риск'],
+                data: [15, 75, 10],
+                colors: ['#8b92a5', '#d4af37', '#3a404d']
+            }
+        };
+
+        btnResult.addEventListener('click', () => {
+            // Считаем баллы
+            const totalScore = Object.values(answers).reduce((a, b) => a + b, 0);
+            
+            let resultKey = 'moderate';
+            if (totalScore <= 6) resultKey = 'conservative';
+            else if (totalScore >= 10) resultKey = 'aggressive';
+
+            const profile = profiles[resultKey];
+
+            // Заполняем тексты
+            document.getElementById('profile-title').textContent = profile.title;
+            document.getElementById('profile-desc').textContent = profile.desc;
+            
+            const ul = document.getElementById('profile-list');
+            ul.innerHTML = '';
+            profile.labels.forEach((label, index) => {
+                ul.innerHTML += `<li>${label}: <strong style="color:var(--text-main)">${profile.data[index]}%</strong></li>`;
+            });
+
+            // Отрисовываем график
+            drawChart(profile);
+
+            // Показываем секцию результатов
+            const resSection = document.getElementById('result-section');
+            resSection.style.display = 'block';
+            
+            // Плавный скролл к результату
+            resSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        function drawChart(profile) {
+            const ctx = document.getElementById('portfolioChart').getContext('2d');
+            
+            // Удаляем старый график, если пользователь решил перепройти тест
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            Chart.defaults.color = '#8b92a5';
+            Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: profile.labels,
+                    datasets: [{
+                        data: profile.data,
+                        backgroundColor: profile.colors,
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%', // Делаем кольцо тонким и элегантным
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#f5f5f5', usePointStyle: true, padding: 20 }
+                        },
+                        tooltip: {
+                            backgroundColor: '#121418',
+                            titleColor: '#d4af37',
+                            bodyColor: '#f5f5f5',
+                            borderColor: 'rgba(212, 175, 55, 0.3)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

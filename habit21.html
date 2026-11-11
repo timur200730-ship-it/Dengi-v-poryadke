@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Трекер Дисциплины | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; }
+        
+        .content { flex: 1; padding: 25px 20px; overflow-y: auto; text-align: center; }
+        
+        .habit-input { width: 100%; background: transparent; border: none; border-bottom: 2px solid var(--border-color); color: var(--gold-light); font-family: 'Playfair Display', serif; font-size: 24px; text-align: center; padding: 10px; margin-bottom: 30px; outline: none; transition: 0.3s; }
+        .habit-input:focus { border-bottom-color: var(--gold-primary); }
+        .habit-input::placeholder { color: #444; }
+
+        .grid-21 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 30px; }
+        .day-circle { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--border-color); display: flex; justify-content: center; align-items: center; font-size: 14px; color: var(--text-muted); cursor: pointer; transition: 0.3s; background: var(--surface); }
+        .day-circle.done { background: var(--gold-primary); border-color: var(--gold-light); color: #000; font-weight: 600; box-shadow: 0 0 15px rgba(212,175,55,0.4); transform: scale(1.05); }
+
+        .progress-bar-bg { width: 100%; height: 8px; background: var(--surface); border-radius: 4px; margin-bottom: 10px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold-primary), var(--gold-light)); width: 0%; transition: width 0.5s ease-out; }
+        .progress-text { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .save-btn { width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .save-btn:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="saveDataAndExit('index.html')">←</button>
+            <div class="header-title"><h1>21 День</h1><p>Формирование привычки</p></div>
+            <div style="width: 24px;"></div>
+        </div>
+        <div class="content">
+            <input type="text" id="habitName" class="habit-input" placeholder="Напишите привычку...">
+            
+            <div class="grid-21" id="grid">
+                <!-- Генерируется через JS -->
+            </div>
+
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+            <div class="progress-text"><span id="progressText">0</span> / 21 Дней выполнено</div>
+        </div>
+        <div class="bottom-action">
+            <button class="save-btn" onclick="saveDataAndExit('index.html')">Сохранить прогресс</button>
+        </div>
+    </div>
+
+    <script>
+        const PAGE_KEY = 'habit21_module';
+        let completedDays = new Array(21).fill(false);
+
+        function initGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 21; i++) {
+                const circle = document.createElement('div');
+                circle.className = 'day-circle' + (completedDays[i] ? ' done' : '');
+                circle.textContent = i + 1;
+                circle.onclick = () => toggleDay(i, circle);
+                grid.appendChild(circle);
+            }
+            updateProgress();
+        }
+
+        function toggleDay(index, el) {
+            completedDays[index] = !completedDays[index];
+            if(completedDays[index]) el.classList.add('done');
+            else el.classList.remove('done');
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const count = completedDays.filter(Boolean).length;
+            document.getElementById('progressText').textContent = count;
+            document.getElementById('progressFill').style.width = (count / 21 * 100) + '%';
+        }
+
+        function saveAllData() {
+            const data = {
+                name: document.getElementById('habitName').value,
+                days: completedDays
+            };
+            localStorage.setItem(PAGE_KEY, JSON.stringify(data));
+        }
+
+        function loadAllData() {
+            const saved = localStorage.getItem(PAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                document.getElementById('habitName').value = data.name || '';
+                if(data.days) completedDays = data.days;
+            }
+            initGrid();
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAllData);
+        function saveDataAndExit(url) { saveAllData(); window.location.href = url; }
+    </script>
+</body>
+</html>

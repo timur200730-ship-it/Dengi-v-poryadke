@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 4: Оптимизация и резервы | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --success: #4caf50; --danger: #e57373; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .content { flex: 1; padding: 25px 20px; overflow-y: auto; }
+        
+        .quote-block { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); font-style: italic; text-align: center; margin-bottom: 25px; padding: 20px; background: rgba(212, 175, 55, 0.05); border-radius: 12px; border: 1px dashed var(--gold-primary); line-height: 1.5; }
+        .text-block { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+        .text-block strong { color: var(--text-main); font-weight: 600; }
+        
+        h2 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--gold-primary); margin: 35px 0 15px; line-height: 1.3; }
+        h3 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--text-main); margin: 25px 0 12px; }
+
+        .step-list { margin-bottom: 25px; }
+        .step-item { display: flex; margin-bottom: 12px; background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .step-num { color: var(--gold-primary); font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 600; margin-right: 15px; line-height: 1; }
+        .step-content { flex: 1; }
+        .step-title { font-size: 14px; color: var(--text-main); font-weight: 600; margin-bottom: 5px; }
+        .step-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+        /* Интерактивный чек-лист аудита */
+        .audit-card { background: linear-gradient(145deg, #111, var(--surface)); border: 1px solid var(--gold-primary); border-radius: 16px; padding: 20px; margin-bottom: 35px; }
+        .audit-card h3 { color: var(--gold-light); margin-top: 0; text-align: center; font-size: 18px; margin-bottom: 15px; }
+        .audit-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); margin-bottom: 10px; cursor: pointer; }
+        .audit-item input { accent-color: var(--gold-primary); width: 16px; height: 16px; cursor: pointer; }
+
+        .module-divider { height: 1px; background: var(--border-color); margin: 35px 0; }
+
+        .materials-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .material-link { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; text-decoration: none; transition: 0.2s; }
+        .material-link:active { transform: scale(0.98); border-color: var(--gold-primary); }
+        .material-icon { font-size: 24px; margin-right: 15px; width: 44px; height: 44px; background: rgba(212, 175, 55, 0.1); border-radius: 10px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .material-info { flex: 1; }
+        .material-title { font-size: 14px; color: var(--text-main); font-weight: 500; margin-bottom: 4px; }
+        .material-desc { font-size: 12px; color: var(--text-muted); }
+        .material-arrow { color: var(--gold-primary); font-size: 20px; font-weight: 600; margin-left: 10px; }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .save-btn { width: 100%; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .save-btn:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='index.html'">←</button>
+            <div class="header-title">
+                <h1>Урок 4</h1>
+                <p>Оптимизация и резервы</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content">
+            
+            <div class="quote-block">
+                «Сэкономленный рубль равен заработанному. Но сэкономленный рубль не нужно облагать налогом».
+            </div>
+
+            <p class="text-block">Когда мы навели порядок в бюджете и закрыли опасные долги, наступает этап поиска скрытых резервов. Часто нам кажется, что сокращать больше нечего. Но это иллюзия: в любом бюджете спрятаны деньги, которые можно высвободить без ухудшения качества жизни.</p>
+
+<h2>3 источника скрытых денег</h2>
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <div class="step-title">Налоговые вычеты от государства</div>
+                        <div class="step-desc">Каждый официально работающий гражданин платит 13% НДФЛ. Государство готово вернуть часть этих денег за покупку квартиры, лечение, обучение или инвестиции через ИИС. Вы можете вернуть деньги за последние 3 года!</div>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Ревизия обязательных платежей</div>
+                        <div class="step-desc">Проверьте подписки (кино, музыка, сервисы), которыми не пользуетесь. Пересогласуйте страховку по ипотеке (банковские тарифы часто в 2 раза дороже прямых предложений страховых компаний).</div>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <div class="step-title">Мертвый капитал (Расхламление)</div>
+                        <div class="step-desc">Вещи, которые пылают на балконе или в шкафу (старые гаджеты, спортінвентарь, одежда), можно продать на Авито. Это даст быстрый кэш для вашей копилки целей.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ИНТЕРАКТИВНЫЙ ЧЕК-ЛИСТ -->
+            <div class="audit-card">
+                <h3>Экспресс-аудит ваших скрытых резервов</h3>
+                <label class="audit-item"><input type="checkbox"> Я оформлял(а) налоговый вычет за последние 3 года</label>
+                <label class="audit-item"><input type="checkbox"> У меня отключены все автопродления неиспользуемых подписок</label>
+                <label class="audit-item"><input type="checkbox"> Я проверяю альтернативные цены на страховку при ипотеке</label>
+                <label class="audit-item"><input type="checkbox"> Я хотя бы раз продавал(а) ненужные вещи через доски объявлений</label>
+            </div>
+
+            <div class="module-divider"></div>
+
+            <h2>Практика к Уроку 4</h2>
+            <div class="materials-list">
+                <a href="guide4.html" class="material-link">
+                    <div class="material-icon">📖</div>
+                    <div class="material-info"><div class="material-title">Гайд к уроку</div><div class="material-desc">Памятка по налоговым вычетам и оптимизации</div></div>
+                    <div class="material-arrow">→</div>
+                </a>
+                <a href="workbook4.html" class="material-link">
+                    <div class="material-icon">📓</div>
+                    <div class="material-info"><div class="material-title">Рабочая тетрадь</div><div class="material-desc">Чек-лист поиска скрытых денег</div></div>
+                    <div class="material-arrow">→</div>
+                </a>
+                <a href="test4.html" class="material-link" style="border-color: rgba(212, 175, 55, 0.4);">
+                    <div class="material-icon">✅</div>
+                    <div class="material-info"><div class="material-title">Пройти тест 4</div><div class="material-desc">Проверка знаний по Уроку 4</div></div>
+                    <div class="material-arrow">→</div>
+                </a>
+            </div>
+
+        </div>
+
+        <div class="bottom-action">
+            <button class="save-btn" id="finishBtn" onclick="completeLesson()">Завершить Урок 4</button>
+        </div>
+    </div>
+
+    <script>
+        function completeLesson() {
+            localStorage.setItem('module4_completed', 'true');
+            const btn = document.getElementById('finishBtn');
+            btn.style.background = 'var(--success)';
+            btn.style.color = '#fff';
+            btn.textContent = '✓ Урок пройден!';
+            setTimeout(() => { window.location.href = 'index.html'; }, 800);
+        }
+    </script>
+</body>
+</html>

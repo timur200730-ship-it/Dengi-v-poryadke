@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART Цели | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <style>
+        :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --success: #4caf50; --danger: #e57373; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); display: flex; justify-content: center; min-height: 100vh; color: var(--text-main); }
+        .mobile-container { width: 100%; max-width: 450px; background-color: var(--bg-dark); display: flex; flex-direction: column; }
+        
+        .header { padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95); border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        .goals-list { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
+        .goal-card { background: var(--surface); border: 1px solid var(--border-color); border-left: 3px solid var(--gold-primary); border-radius: 12px; padding: 20px; position: relative; }
+        .goal-date { font-size: 11px; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 600; }
+        .goal-text { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--text-main); line-height: 1.4; margin-bottom: 12px; }
+        .goal-details { font-size: 12px; color: var(--text-muted); line-height: 1.5; padding-top: 12px; border-top: 1px dashed var(--border-color); display: none; }
+        .goal-card.expanded .goal-details { display: block; animation: fadeIn 0.3s ease; }
+        .delete-btn { position: absolute; top: 15px; right: 15px; color: var(--danger); background: none; border: none; font-size: 18px; cursor: pointer; opacity: 0.7; }
+        .expand-btn { font-size: 11px; color: var(--text-muted); background: none; border: none; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; margin-top: 10px; display: flex; align-items: center; gap: 5px; }
+
+        .empty-state { text-align: center; padding: 30px 20px; color: var(--text-muted); font-size: 13px; line-height: 1.5; border: 1px dashed var(--border-color); border-radius: 12px; margin-bottom: 25px; }
+
+        .form-container { background: linear-gradient(145deg, #111, var(--surface)); border: 1px solid var(--gold-primary); border-radius: 16px; padding: 25px 20px; margin-bottom: 25px; display: none; animation: slideDown 0.3s ease; }
+        .form-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold-light); margin-bottom: 15px; text-align: center; }
+        
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 12px; color: var(--gold-light); margin-bottom: 6px; font-weight: 500; }
+        .input-group .sub-label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; line-height: 1.3; }
+        .input-wrapper input, .input-wrapper textarea { width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 15px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13px; outline: none; transition: 0.3s; }
+        .input-wrapper textarea { resize: vertical; min-height: 60px; }
+        .input-wrapper input:focus, .input-wrapper textarea:focus { border-color: var(--gold-primary); }
+
+        .result-box { display: none; margin-top: 20px; background: rgba(212, 175, 55, 0.05); border: 1px dashed var(--gold-primary); border-radius: 12px; padding: 20px; animation: fadeIn 0.4s ease; text-align: center; }
+        .result-title { font-size: 11px; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
+        .result-text { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--text-main); line-height: 1.5; margin-bottom: 15px; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-outline { flex: 1; padding: 14px; background: transparent; border: 1px solid var(--border-color); color: var(--text-main); border-radius: 8px; font-weight: 500; font-size: 13px; cursor: pointer; }
+        .btn-primary { flex: 1; padding: 14px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); border: none; color: #000; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .add-btn { width: 100%; padding: 16px; border-radius: 12px; background: var(--surface); border: 1px dashed var(--gold-primary); color: var(--gold-light); font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 25px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .add-btn:active { background: rgba(212, 175, 55, 0.1); }
+
+        .info-card { background: var(--surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-top: 25px; }
+        .info-card h3 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); margin-bottom: 10px; }
+        .info-card p { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 15px; }
+        
+        .example-box { background: var(--bg-dark); border-radius: 10px; padding: 12px 15px; margin-bottom: 10px; font-size: 12px; line-height: 1.4; }
+        .example-box.bad { border-left: 3px solid var(--danger); }
+        .example-box.good { border-left: 3px solid var(--success); }
+        .example-title { font-weight: 600; margin-bottom: 4px; }
+        .example-box.bad .example-title { color: var(--danger); }
+        .example-box.good .example-title { color: var(--success); }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+        .btn-export { width: 100%; padding: 14px; border-radius: 12px; background: transparent; border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-pdf { width: 100%; padding: 14px; border-radius: 12px; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--gold-primary); color: var(--gold-light); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
+
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            .mobile-container { max-width: 100% !important; box-shadow: none !important; }
+            .header, .bottom-action, .back-btn, .add-btn, .delete-btn, .info-card { display: none !important; }
+            .goal-card { background: #fff !important; border: 1px solid #ccc !important; color: #000 !important; border-left: 3px solid #d4af37 !important; }
+            .goal-text { color: #000 !important; }
+            .goal-details { display: block !important; color: #333 !important; border-top: 1px dashed #ccc !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="window.history.back()">←</button>
+            <div class="header-title">
+                <h1>SMART Цели</h1>
+                <p>Портфель желаний</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="content">
+            
+            <button class="add-btn" id="showFormBtn" onclick="toggleForm(true)">+ Добавить новую цель</button>
+
+            <!-- Форма создания SMART цели -->
+            <div class="form-container" id="smartForm">
+                <div class="form-title">Оцифровка по SMART</div>
+                
+                <div class="input-group">
+                    <label>S – Конкретика (Specific)</label>
+                    <span class="sub-label">Что именно вы хотите получить?</span>
+                    <div class="input-wrapper"><input type="text" id="s_val" placeholder="Например: Купить квартиру в центре"></div>
+                </div>
+                <div class="input-group">
+                    <label>M – Измеримость (Measurable)</label>
+                    <span class="sub-label">Сколько это стоит / в каких цифрах измеряется?</span>
+                    <div class="input-wrapper"><input type="text" id="m_val" placeholder="Например: 5 000 000 рублей"></div>
+                </div>
+                <div class="input-group">
+                    <label>A – Достижимость (Achievable)</label>
+                    <span class="sub-label">За счет каких действий и ресурсов вы это сделаете?</span>
+                    <div class="input-wrapper"><textarea id="a_val" placeholder="Например: Буду откладывать по 50 тыс. в месяц и инвестировать под 15%"></textarea></div>
+                </div>
+                <div class="input-group">
+                    <label>R – Значимость (Relevant)</label>
+                    <span class="sub-label">Зачем вам это на самом деле? Какую задачу это решает?</span>
+                    <div class="input-wrapper"><textarea id="r_val" placeholder="Например: Чтобы перестать платить за аренду и обрести независимость"></textarea></div>
+                </div>
+                <div class="input-group">
+                    <label>T – Срок (Time-bound)</label>
+                    <span class="sub-label">К какой дате цель должна быть достигнута?</span>
+                    <div class="input-wrapper"><input type="month" id="t_val"></div>
+                </div>
+
+                <button class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="generateSMART()">🪄 Сформулировать</button>
+
+                <div class="result-box" id="resultBox">
+                    <div class="result-title">Ваша сформулированная цель:</div>
+                    <div class="result-text" id="resultText"></div>
+                    <div class="btn-group">
+                        <button class="btn-outline" onclick="toggleForm(false)">Отмена</button>
+                        <button class="btn-primary" onclick="saveGoal()">💾 Сохранить в портфель</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Список целей -->
+            <div class="goals-list" id="goalsList">
+                <!-- Карточки генерируются через JS -->
+            </div>
+
+            <!-- Пояснительный блок с примерами -->
+            <div class="info-card">
+                <h3>Зачем нужен метод SMART?</h3>
+                <p>Метод SMART переводит мечту из категории фантазий в четкий бизнес-план с дедлайном.</p>
+
+                <div class="example-box bad">
+                    <div class="example-title">❌ Неправильная цель (Хотелка)</div>
+                    <div style="color: var(--text-muted);">«Хочу накопить на машину»<br><em>Почему не работает:</em> нет суммы, нет срока, непонятно, какая именно машина и когда.</div>
+                </div>
+
+                <div class="example-box good">
+                    <div class="example-title">✅ Правильная SMART-цель</div>
+                    <div style="color: var(--text-muted);">«До декабря 2027 года я накоплю 2 000 000 ₽ на покупку кроссовера. Для этого я буду ежемесячно инвестировать по 40 000 ₽ под 15% годовых, что позволит мне комфортно передвигаться по городу и ездить всей семьей на природу»</div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bottom-action">
+            <button class="btn-pdf" onclick="window.print()">📥 Сохранить портфель в PDF</button>
+            <button class="btn-export" onclick="exportExcel()">Скачать портфель в Excel</button>
+        </div>
+    </div>
+
+    <script>
+        const PAGE_KEY = 'smart_goals_list';
+        let goals = [];
+
+        function toggleForm(show) {
+            document.getElementById('smartForm').style.display = show ? 'block' : 'none';
+            document.getElementById('showFormBtn').style.display = show ? 'none' : 'flex';
+            if(!show) {
+                document.getElementById('resultBox').style.display = 'none';
+                clearForm();
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('s_val').value = '';
+            document.getElementById('m_val').value = '';
+            document.getElementById('a_val').value = '';
+            document.getElementById('r_val').value = '';
+            document.getElementById('t_val').value = '';
+        }
+
+        function generateSMART() {
+            const s = document.getElementById('s_val').value.trim();
+            const m = document.getElementById('m_val').value.trim();
+            const a = document.getElementById('a_val').value.trim();
+            const r = document.getElementById('r_val').value.trim();
+            const t = document.getElementById('t_val').value;
+
+            if (!s || !m || !a || !r || !t) {
+                alert("Пожалуйста, заполните все 5 полей для корректной формулировки.");
+                return;
+            }
+
+            const dateObj = new Date(t);
+            const monthNames = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"];
+            const formattedDate = monthNames[dateObj.getMonth()] + ' ' + dateObj.getFullYear();
+
+            const phrase = `«До конца ${formattedDate} года я планирую ${s.toLowerCase()} (Объем: ${m}). Для этого я ${a.toLowerCase()}. Это по-настоящему важно для меня, потому что это позволит мне ${r.toLowerCase()}».`;
+
+            document.getElementById('resultText').innerHTML = phrase;
+            document.getElementById('resultBox').style.display = 'block';
+            
+            document.getElementById('resultBox').dataset.phrase = phrase;
+            document.getElementById('resultBox').dataset.date = formattedDate;
+            document.getElementById('resultBox').dataset.details = `S: ${s}\nM: ${m}\nA: ${a}\nR: ${r}`;
+        }
+
+        function saveGoal() {
+            const resultBox = document.getElementById('resultBox');
+            const newGoal = {
+                id: Date.now(),
+                date: resultBox.dataset.date,
+                phrase: resultBox.dataset.phrase,
+                details: resultBox.dataset.details
+            };
+            
+            goals.push(newGoal);
+            localStorage.setItem(PAGE_KEY, JSON.stringify(goals));
+            
+            toggleForm(false);
+            renderGoals();
+        }
+
+        function deleteGoal(id) {
+            if(confirm("Удалить эту цель из портфеля?")) {
+                goals = goals.filter(g => g.id !== id);
+                localStorage.setItem(PAGE_KEY, JSON.stringify(goals));
+                renderGoals();
+            }
+        }
+
+        function toggleDetails(btn) {
+            const card = btn.closest('.goal-card');
+            card.classList.toggle('expanded');
+            btn.innerHTML = card.classList.contains('expanded') ? 'Скрыть детали ↑' : 'Показать разбор ↓';
+        }
+
+        function renderGoals() {
+            const list = document.getElementById('goalsList');
+            list.innerHTML = '';
+
+            if (goals.length === 0) {
+                list.innerHTML = '<div class="empty-state">Ваш портфель целей пока пуст.<br>Нажмите кнопку выше, чтобы оцифровать свою первую мечту.</div>';
+                return;
+            }
+
+            [...goals].reverse().forEach(goal => {
+                const html = `
+                    <div class="goal-card">
+                        <button class="delete-btn" onclick="deleteGoal(${goal.id})">×</button>
+                        <div class="goal-date">🎯 Дедлайн: ${goal.date}</div>
+                        <div class="goal-text">${goal.phrase}</div>
+                        <button class="expand-btn" onclick="toggleDetails(this)">Показать разбор ↓</button>
+                        <div class="goal-details">
+                            ${goal.details.replace(/\n/g, '<br><br>')}
+                        </div>
+                    </div>
+                `;
+                list.innerHTML += html;
+            });
+        }
+
+        async function exportExcel() {
+            if(goals.length === 0) { alert('У вас пока нет сохраненных целей.'); return; }
+            
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('SMART Цели');
+            ws.columns = [{width: 20}, {width: 60}, {width: 40}];
+
+            ws.addRow(['ДЕДЛАЙН', 'ФОРМУЛИРОВКА', 'ДЕТАЛИ (SMART)']).font = {bold: true, color: {argb: 'FFD4AF37'}};
+            
+            goals.forEach(g => {
+                ws.addRow([g.date, g.phrase, g.details]);
+            });
+
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `My_SMART_Goals.xlsx`; link.click();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem(PAGE_KEY);
+            if(saved) goals = JSON.parse(saved);
+            renderGoals();
+        });
+    </script>
+</body>
+</html>

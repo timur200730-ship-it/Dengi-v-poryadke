@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>Сертификат выпускника | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+    :root {
+        --bg-dark: #0a0a0a;
+        --surface: #171717;
+        --gold-primary: #d4af37;
+        --gold-light: #fde08b;
+        --text-main: #ffffff;
+        --text-muted: #a3a3a3;
+        --border-color: #333333;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #000;
+        display: flex; justify-content: center; align-items: flex-start;
+        min-height: 100vh; color: var(--text-main);
+        opacity: 0; transition: opacity 0.3s ease;
+    }
+
+    .mobile-container {
+        width: 100%; max-width: 450px; min-height: 100vh;
+        background-color: var(--bg-dark); position: relative;
+        display: flex; flex-direction: column;
+        box-shadow: 0 0 50px rgba(212, 175, 55, 0.05);
+        padding-bottom: 40px;
+    }
+
+    /* Шапка */
+    .header {
+        padding: 30px 20px 20px;
+        background: rgba(10, 10, 10, 0.95);
+        border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        display: flex; justify-content: space-between; align-items: center;
+        position: sticky; top: 0; z-index: 10;
+    }
+    .back-btn {
+        background: none; border: none; color: var(--text-muted);
+        font-size: 14px; cursor: pointer; padding: 0;
+        font-family: 'Inter', sans-serif; transition: color 0.3s;
+    }
+    .back-btn:hover { color: var(--text-main); }
+    .header-title {
+        font-family: 'Playfair Display', serif; font-size: 20px;
+        color: var(--gold-light);
+    }
+
+    /* Обёртка сертификата */
+    .cert-wrapper { padding: 20px; }
+
+    .cert-card {
+        background:
+            radial-gradient(600px 250px at 50% -10%, rgba(212, 175, 55, 0.10), transparent 60%),
+            linear-gradient(180deg, #141414 0%, #0b0b0b 100%);
+        border: 1px solid rgba(212, 175, 55, 0.45);
+        border-radius: 20px;
+        padding: 16px;
+        position: relative;
+    }
+    .cert-inner {
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        border-radius: 14px;
+        padding: 28px 22px 26px;
+        text-align: center;
+        position: relative;
+    }
+
+    /* Уголки */
+    .corner { position: absolute; width: 26px; height: 26px; border: 2px solid var(--gold-primary); opacity: .8; }
+    .corner.tl { top: 8px; left: 8px; border-right: none; border-bottom: none; border-top-left-radius: 6px; }
+    .corner.tr { top: 8px; right: 8px; border-left: none; border-bottom: none; border-top-right-radius: 6px; }
+    .corner.bl { bottom: 8px; left: 8px; border-right: none; border-top: none; border-bottom-left-radius: 6px; }
+    .corner.br { bottom: 8px; right: 8px; border-left: none; border-top: none; border-bottom-right-radius: 6px; }
+
+    .logo {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--gold-primary), var(--gold-light));
+        color: #000; display: flex; justify-content: center; align-items: center;
+        font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700;
+        margin: 0 auto 14px;
+        box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+    }
+
+    .brand {
+        font-family: 'Playfair Display', serif; font-size: 22px;
+        color: var(--gold-primary); font-weight: 700;
+    }
+    .brand-sub {
+        font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+        color: var(--gold-light); opacity: .85; margin-top: 4px;
+    }
+
+    .divider {
+        width: 100px; height: 1px; background: rgba(212, 175, 55, 0.45);
+        margin: 18px auto; position: relative;
+    }
+    .divider::before {
+        content: "◆"; color: var(--gold-primary); position: absolute;
+        left: 50%; top: 50%; transform: translate(-50%, -50%);
+        background: #0f0f0f; padding: 0 8px; font-size: 10px;
+    }
+
+    .cert-title {
+        font-family: 'Playfair Display', serif; font-size: 26px;
+        color: var(--gold-primary); line-height: 1.2; font-weight: 700;
+    }
+    .cert-sub {
+        font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+        color: var(--text-muted); margin-top: 8px;
+    }
+
+    .presented { font-size: 12px; color: var(--text-muted); margin-top: 22px; }
+
+    /* ============ ПОЛЕ ИМЕНИ ============ */
+    .name-input,
+    .name-display {
+        width: 100%;
+        max-width: 340px;
+        font-family: 'Playfair Display', serif;
+        font-size: 24px;
+        font-style: italic;
+        font-weight: 400;
+        color: var(--text-main);
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid rgba(212, 175, 55, 0.45);
+        text-align: center;
+        padding: 12px 10px 12px;
+        margin: 12px auto 6px;
+        outline: none;
+        display: block;
+        line-height: 1.4;              /* ← важно: не даёт обрезать глифы */
+        min-height: 56px;              /* ← фиксированная минимальная высота */
+        transition: border-color .2s;
+        overflow: visible;             /* ← на всякий случай */
+    }
+    .name-input::placeholder {
+        color: rgba(212, 175, 55, 0.45);
+        font-size: 18px;
+        font-style: italic;
+        line-height: 1.4;
+    }
+    .name-input:focus { border-bottom-color: var(--gold-primary); }
+
+    /* Если поле пустое — div-заменитель показывает «приглушённый» текст */
+    .name-display.is-placeholder {
+        color: rgba(212, 175, 55, 0.45);
+        font-size: 18px;
+    }
+
+    .desc {
+        font-size: 12px; color: #cfcfcf; line-height: 1.6;
+        margin-top: 16px;
+    }
+    .desc b { color: var(--gold-light); font-weight: 600; }
+
+    .bottom {
+        margin-top: 24px;
+        display: flex; justify-content: space-between; align-items: flex-end; gap: 10px;
+    }
+    .bottom > div { flex: 1; }
+
+    .date-block { text-align: center; }
+    .date-line { width: 100%; max-width: 100px; height: 1px; background: rgba(212,175,55,.45); margin: 0 auto 6px; }
+    .date-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); }
+
+    .date-input,
+    .date-display {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--text-main);
+        background: transparent;
+        border: none;
+        text-align: center;
+        width: 100%;
+        max-width: 100px;
+        padding: 4px 0;
+        outline: none;
+        border-bottom: 1px solid transparent;
+        line-height: 1.5;
+        min-height: 22px;
+    }
+    .date-input::placeholder { color: rgba(212,175,55,.5); }
+    .date-input:focus { border-bottom-color: var(--gold-primary); }
+    .date-display.is-placeholder { color: rgba(212,175,55,.5); }
+
+    .seal {
+        width: 78px; height: 78px; border-radius: 50%;
+        border: 2px solid var(--gold-primary); opacity: .9;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        color: var(--gold-primary); margin: 0 auto;
+        background: radial-gradient(circle at 30% 30%, rgba(212,175,55,.15), transparent 70%);
+        flex: 0 0 auto !important;
+    }
+    .seal .icon { font-size: 20px; }
+    .seal .txt {
+        font-size: 7px; letter-spacing: 1.5px; text-transform: uppercase;
+        margin-top: 2px; text-align: center; line-height: 1.2;
+    }
+
+    .sig { text-align: center; }
+    .sig-line { width: 100%; max-width: 110px; height: 1px; background: rgba(212,175,55,.45); margin: 0 auto 6px; }
+    .sig-name { font-family: 'Playfair Display', serif; font-size: 13px; color: var(--gold-light); font-style: italic; }
+    .sig-role { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-top: 3px; }
+
+    .id-label {
+        margin-top: 20px; font-size: 9px; letter-spacing: 1.5px;
+        text-transform: uppercase; color: var(--text-muted); text-align: center;
+    }
+
+    /* Кнопки */
+    .actions { display: flex; gap: 10px; margin-top: 20px; }
+    .btn {
+        flex: 1; padding: 14px 12px; border-radius: 10px;
+        font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+        cursor: pointer; border: none; transition: 0.2s;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, var(--gold-primary), var(--gold-light));
+        color: #000;
+        box-shadow: 0 8px 24px -10px rgba(212, 175, 55, 0.6);
+    }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-primary:disabled { opacity: .7; cursor: wait; }
+    .btn-ghost {
+        background: transparent; color: var(--gold-primary);
+        border: 1px solid rgba(212, 175, 55, 0.45);
+    }
+    .btn-ghost:active { transform: scale(0.97); }
+
+    .hint {
+        font-size: 11px; color: var(--text-muted); text-align: center;
+        margin-top: 14px; line-height: 1.5;
+    }
+
+    /* =================== ГОРИЗОНТАЛЬНЫЙ РЕЖИМ ДЛЯ PDF =================== */
+    .cert-card.landscape-mode {
+        width: 1123px !important;
+        height: 794px !important;
+        padding: 30px !important;
+        border-radius: 0 !important;
+        box-sizing: border-box !important;
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        margin: 0 !important;
+        z-index: 9998 !important;
+    }
+    .cert-card.landscape-mode .cert-inner {
+        height: 100% !important;
+        padding: 36px 70px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        border-radius: 6px !important;
+    }
+    .cert-card.landscape-mode .logo {
+        width: 64px !important; height: 64px !important;
+        font-size: 30px !important; margin-bottom: 12px !important;
+    }
+    .cert-card.landscape-mode .brand { font-size: 26px !important; }
+    .cert-card.landscape-mode .brand-sub { font-size: 11px !important; letter-spacing: 3px !important; }
+    .cert-card.landscape-mode .divider { width: 130px !important; margin: 16px auto !important; }
+    .cert-card.landscape-mode .cert-title { font-size: 40px !important; }
+    .cert-card.landscape-mode .cert-sub { font-size: 11px !important; letter-spacing: 5px !important; }
+    .cert-card.landscape-mode .presented { font-size: 15px !important; margin-top: 18px !important; }
+
+    /* Имя в горизонтальном режиме */
+    .cert-card.landscape-mode .name-input,
+    .cert-card.landscape-mode .name-display {
+        font-size: 36px !important;
+        max-width: 720px !important;
+        padding: 16px 24px 18px !important;
+        margin: 16px auto 8px !important;
+        line-height: 1.4 !important;
+        min-height: 80px !important;
+    }
+    .cert-card.landscape-mode .name-input::placeholder,
+    .cert-card.landscape-mode .name-display.is-placeholder {
+        font-size: 22px !important;
+    }
+
+    .cert-card.landscape-mode .desc {
+        font-size: 14px !important;
+        max-width: 880px !important;
+        margin: 18px auto 0 !important;
+        line-height: 1.7 !important;
+    }
+    .cert-card.landscape-mode .bottom {
+        margin-top: 20px !important;
+        gap: 60px !important;
+    }
+    .cert-card.landscape-mode .date-line { max-width: 140px !important; }
+
+    .cert-card.landscape-mode .date-input,
+    .cert-card.landscape-mode .date-display {
+        font-size: 14px !important;
+        max-width: 140px !important;
+        min-height: 24px !important;
+    }
+    .cert-card.landscape-mode .date-label { font-size: 10px !important; }
+    .cert-card.landscape-mode .seal { width: 100px !important; height: 100px !important; }
+    .cert-card.landscape-mode .seal .icon { font-size: 26px !important; }
+    .cert-card.landscape-mode .seal .txt { font-size: 8px !important; }
+    .cert-card.landscape-mode .sig-line { max-width: 150px !important; }
+    .cert-card.landscape-mode .sig-name { font-size: 16px !important; }
+    .cert-card.landscape-mode .sig-role { font-size: 10px !important; letter-spacing: 1.5px !important; }
+    .cert-card.landscape-mode .id-label { font-size: 10px !important; margin-top: 14px !important; }
+    .cert-card.landscape-mode .corner { width: 32px !important; height: 32px !important; }
+
+    /* =================== ОВЕРЛЕЙ ЗАГРУЗКИ =================== */
+    #pdfOverlay {
+        position: fixed; inset: 0;
+        background: #0b0b0b;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 18px;
+        z-index: 9999;
+        color: var(--gold-primary);
+        font-family: 'Inter', sans-serif;
+    }
+    #pdfOverlay .spinner {
+        width: 44px; height: 44px;
+        border: 3px solid rgba(212, 175, 55, 0.2);
+        border-top-color: var(--gold-primary);
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #pdfOverlay .text {
+        font-size: 14px; letter-spacing: 1px;
+        color: var(--gold-light); text-transform: uppercase;
+    }
+</style>
+</head>
+<body>
+    <div class="mobile-container">
+
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='profile.html'">← Назад</button>
+            <div class="header-title">Сертификат</div>
+        </div>
+
+        <div class="cert-wrapper">
+            <div class="cert-card">
+                <div class="cert-inner">
+
+                    <div class="corner tl"></div>
+                    <div class="corner tr"></div>
+                    <div class="corner bl"></div>
+                    <div class="corner br"></div>
+
+                    <div class="logo">Т</div>
+                    <div class="brand">Деньги в порядке</div>
+                    <div class="brand-sub">Тимур Хайретдинов</div>
+
+                    <div class="divider"></div>
+
+                    <div class="cert-title">Сертификат выпускника</div>
+                    <div class="cert-sub">Certificate of Completion</div>
+
+                    <div class="presented">Настоящим подтверждается, что</div>
+
+                    <input
+                        type="text"
+                        class="name-input"
+                        id="studentName"
+                        placeholder="Впишите ваше имя"
+                        autocomplete="off"
+                        spellcheck="false"
+                        maxlength="60"
+                    >
+
+                    <div class="desc">
+                        успешно завершил(а) 5-недельный марафон <b>«Деньги в порядке»</b>:
+                        освоил(а) постановку финансовых целей, ведение бюджета,
+                        финансовую безопасность, оптимизацию расходов и составление
+                        личного финансового плана, а также применил(а) инструменты на практике.
+                    </div>
+
+                    <div class="bottom">
+                        <div class="date-block">
+                            <div class="date-line"></div>
+                            <div class="date-label">Дата</div>
+                            <input
+                                type="text"
+                                class="date-input"
+                                id="certDate"
+                                placeholder="__.__.20__"
+                                autocomplete="off"
+                                maxlength="12"
+                            >
+                        </div>
+
+                        <div class="seal">
+                            <div class="icon">★</div>
+                            <div class="txt">Деньги<br>в порядке</div>
+                        </div>
+
+                        <div class="sig">
+                            <div class="sig-line"></div>
+                            <div class="sig-name">Тимур Хайретдинов</div>
+                            <div class="sig-role">Автор марафона</div>
+                        </div>
+                    </div>
+
+                    <div class="id-label" id="certId">ID сертификата: —</div>
+
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-ghost" onclick="clearFields()">Очистить</button>
+                <button class="btn btn-primary" id="btnSave" onclick="downloadCertificate()">Скачать в PDF</button>
+            </div>
+
+            <div class="hint">
+                Впишите имя в строку выше. Затем нажмите «Скачать в PDF».<br>
+                PDF сохранится в горизонтальном формате A4 с тёмным фоном.
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Авторизация Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCber9hVJt50u2l_gCCy8YAzmJ4tcd3gJA",
+            authDomain: "profinancy-c6709.firebaseapp.com",
+            databaseURL: "https://profinancy-c6709-default-rtdb.firebaseio.com",
+            projectId: "profinancy-c6709",
+            storageBucket: "profinancy-c6709.firebasestorage.app",
+            messagingSenderId: "583520365222",
+            appId: "1:583520365222:web:bcce6adb7e3a3a97c42267"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => {
+            document.body.style.opacity = '1';
+
+            if (!user) {
+                window.location.href = 'auth.html';
+                return;
+            }
+
+            let completedCount = 0;
+            for (let i = 1; i <= 5; i++) {
+                if (localStorage.getItem(`module${i}_completed`) === 'true') completedCount++;
+            }
+            if (completedCount < 5) {
+                alert('Сертификат доступен после прохождения всех 5 недель курса.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const savedName = localStorage.getItem('cert_name');
+            const defaultName = user.email.split('@')[0];
+            const nameInput = document.getElementById('studentName');
+            nameInput.value = savedName || defaultName;
+
+            let certId = localStorage.getItem('cert_id');
+            if (!certId) {
+                const year = new Date().getFullYear();
+                const rand = Math.floor(1000 + Math.random() * 9000);
+                certId = `DVP-${year}-${rand}`;
+                localStorage.setItem('cert_id', certId);
+            }
+            document.getElementById('certId').textContent = 'ID сертификата: ' + certId;
+
+            const dateInput = document.getElementById('certDate');
+            if (!dateInput.value) {
+                const d = new Date();
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const yyyy = d.getFullYear();
+                dateInput.value = `${dd}.${mm}.${yyyy}`;
+            }
+
+            nameInput.addEventListener('input', () => {
+                localStorage.setItem('cert_name', nameInput.value);
+            });
+        });
+    </script>
+
+    <!-- Утилиты -->
+    <script>
+        function clearFields() {
+            document.getElementById('studentName').value = '';
+            document.getElementById('certDate').value = '';
+            localStorage.removeItem('cert_name');
+            document.getElementById('studentName').focus();
+        }
+
+        // Заменяет input на div с тем же текстом и стилями
+        function inputToDiv(input) {
+            if (!input) return null;
+            const div = document.createElement('div');
+            div.className = input.className + ' input-as-div';
+            div.textContent = input.value || input.placeholder || '';
+            if (!input.value) div.classList.add('is-placeholder');
+            input.style.display = 'none';
+            input.parentNode.insertBefore(div, input.nextSibling);
+            return div;
+        }
+
+        // Возвращает input на место
+        function restoreInput(input, div) {
+            if (!input) return;
+            if (div && div.parentNode) div.parentNode.removeChild(div);
+            input.style.display = '';
+        }
+    </script>
+
+    <!-- Экспорт в горизонтальный PDF -->
+    <script>
+        async function downloadCertificate() {
+            const btn = document.getElementById('btnSave');
+            const card = document.querySelector('.cert-card');
+            const nameInput = document.getElementById('studentName');
+            const dateInput = document.getElementById('certDate');
+
+            if (!card) return;
+
+            const originalText = btn.textContent;
+            btn.textContent = 'Готовим…';
+            btn.disabled = true;
+
+            // Оверлей загрузки
+            const overlay = document.createElement('div');
+            overlay.id = 'pdfOverlay';
+            overlay.innerHTML = '<div class="spinner"></div><div class="text">Готовим PDF…</div>';
+            document.body.appendChild(overlay);
+
+            // Запоминаем место карточки в DOM
+            const originalParent = card.parentNode;
+            const originalNext = card.nextSibling;
+            const originalInlineStyle = card.getAttribute('style') || '';
+
+            // Подменяем input-поля на div (html2canvas рендерит их без обрезки)
+            const nameDiv = inputToDiv(nameInput);
+            const dateDiv = inputToDiv(dateInput);
+
+            try {
+                // Переносим карточку в body и включаем горизонтальный режим
+                document.body.appendChild(card);
+                card.classList.add('landscape-mode');
+
+                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+                await new Promise(r => setTimeout(r, 250));
+
+                const canvas = await html2canvas(card, {
+                    backgroundColor: '#0b0b0b',
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false,
+                    width: 1123,
+                    height: 794,
+                    windowWidth: 1123,
+                    windowHeight: 794
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const pageW = pdf.internal.pageSize.getWidth();
+                const pageH = pdf.internal.pageSize.getHeight();
+
+                pdf.setFillColor(11, 11, 11);
+                pdf.rect(0, 0, pageW, pageH, 'F');
+                pdf.addImage(imgData, 'PNG', 0, 0, pageW, pageH);
+
+                const studentName = (nameInput.value || 'certificate').replace(/\s+/g, '_');
+                pdf.save(`Деньги_в_порядке_${studentName}.pdf`);
+
+            } catch (err) {
+                console.error(err);
+                alert('Не удалось сохранить PDF. Попробуйте ещё раз или откройте в браузере на компьютере.');
+            } finally {
+                // Возвращаем input-поля
+                restoreInput(nameInput, nameDiv);
+                restoreInput(dateInput, dateDiv);
+
+                // Возвращаем карточку на место
+                card.classList.remove('landscape-mode');
+                if (originalInlineStyle) {
+                    card.setAttribute('style', originalInlineStyle);
+                } else {
+                    card.removeAttribute('style');
+                }
+                if (originalNext) {
+                    originalParent.insertBefore(card, originalNext);
+                } else {
+                    originalParent.appendChild(card);
+                }
+                overlay.remove();
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

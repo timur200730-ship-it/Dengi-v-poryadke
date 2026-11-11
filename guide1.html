@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гайд 1: Капитал и Инфляция | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --surface: #171717;
+            --gold-primary: #d4af37;
+            --gold-light: #fde08b;
+            --text-main: #ffffff;
+            --text-muted: #a3a3a3;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', sans-serif; background-color: #000;
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; color: var(--text-main);
+        }
+
+        .mobile-container {
+            width: 100%; max-width: 450px; min-height: 100vh;
+            background-color: var(--bg-dark); display: flex; flex-direction: column;
+        }
+
+        .header {
+            padding: 40px 20px 15px; background: rgba(10, 10, 10, 0.95);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex;
+            justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10;
+        }
+
+        .back-btn { background: none; border: none; color: var(--gold-primary); font-size: 24px; cursor: pointer; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold-light); }
+        .header-title p { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .article-content { flex: 1; overflow-y: auto; padding: 25px 20px; }
+        .article-title { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--gold-light); margin-bottom: 20px; line-height: 1.3; }
+
+        .quote-block {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), transparent);
+            border-left: 3px solid var(--gold-primary); padding: 20px; border-radius: 0 12px 12px 0; margin-bottom: 25px;
+        }
+        .quote-block p { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--gold-light); font-style: italic; line-height: 1.5; }
+
+        h3.section-heading { font-size: 16px; color: var(--gold-primary); margin: 30px 0 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+        .article-text { font-size: 14px; line-height: 1.6; color: var(--text-muted); margin-bottom: 15px; }
+        .article-text strong { color: var(--text-main); }
+
+        .formula-box {
+            background: var(--surface); border: 1px dashed var(--gold-primary);
+            padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;
+            font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text-main);
+        }
+        .formula-box span { color: var(--gold-light); }
+
+        .list-styled { list-style: none; margin: 15px 0; }
+        .list-styled li { position: relative; padding-left: 20px; margin-bottom: 12px; font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+        .list-styled li::before { content: '•'; position: absolute; left: 0; color: var(--gold-primary); font-size: 18px; line-height: 1; }
+
+        .bottom-action { padding: 20px; background: var(--surface); border-top: 1px solid #333; }
+        .read-btn {
+            width: 100%; padding: 16px; border-radius: 12px; background: transparent; border: 1px solid var(--gold-primary);
+            color: var(--gold-light); font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;
+        }
+        .read-btn.completed { background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); color: #000; border: none; }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-container">
+        <div class="header">
+            <button class="back-btn" onclick="window.location.href='lesson1.html'">←</button>
+            <div class="header-title">
+                <h1>Учебный материал</h1>
+                <p>Урок 1 • Гайд</p>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="article-content">
+            <h2 class="article-title">Капитал и налог на мечту</h2>
+            
+            <div class="quote-block">
+                <p>«Богатство измеряется не тем, сколько вы зарабатываете, а тем, сколько у вас остается и как эти деньги работают на вас.»</p>
+            </div>
+
+            <h3 class="section-heading">Что такое Net Worth?</h3>
+            <p class="article-text">В финансовом мире статус человека определяет не его телефон или машина, а его <strong>Чистая стоимость (Net Worth)</strong>. Это математический срез вашего богатства на сегодняшний день.</p>
+
+            <div class="formula-box">
+                Активы <span>минус</span> Пассивы = <span>Капитал</span>
+            </div>
+
+            <ul class="list-styled">
+                <li><strong>Активы:</strong> Деньги на счетах, вклады, инвестиции, рыночная стоимость квартиры и машины. Всё, что можно продать и получить кэш.</li>
+                <li><strong>Пассивы:</strong> Ипотека, кредиты, долги по кредитным картам. То, что вы должны отдать.</li>
+            </ul>
+        
+    <p class="article-text">Многие люди, выглядящие успешными внешне, имеют отрицательный капитал. Если вы продадите всё свое имущество и закроете все долги — та сумма, которая останется у вас на руках (или тот долг, который еще останется выплатить), и есть ваш Net Worth.</p>
+
+            <h3 class="section-heading">Инфляция: Налог на мечту</h3>
+            <p class="article-text">При постановке финансовых целей 90% людей совершают критическую ошибку: они не учитывают инфляцию. </p>
+            <p class="article-text">Если вы копите на квартиру стоимостью 5 000 000 ₽, откладывая деньги «в тумбочку», вы никогда её не купите. При средней реальной инфляции в 8% годовых цены удваиваются каждые 9 лет. Через 3 года ваша квартира будет стоить уже 6 300 000 ₽.</p>
+            <p class="article-text"><strong>Вывод:</strong> Оцифровка цели должна включать надбавку на инфляцию, а деньги, отложенные на цель, должны работать в инвестиционных инструментах (вклады, облигации), чтобы хотя бы отбивать темпы роста цен.</p>
+
+        </div>
+
+        <div class="bottom-action">
+            <button class="read-btn" id="markReadBtn">Отметить как прочитанное</button>
+        </div>
+    </div>
+
+    <script>
+        const btn = document.getElementById('markReadBtn');
+        btn.addEventListener('click', function() {
+            this.classList.add('completed');
+            this.textContent = '✓ Прочитано';
+            setTimeout(() => { window.location.href='lesson1.html'; }, 800);
+        });
+    </script>
+</body>
+</html>

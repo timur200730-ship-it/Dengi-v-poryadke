@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Профиль | Деньги в порядке</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Наш скрипт облачной синхронизации -->
+<script src="cloud-sync.js"></script>
+<style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --surface: #171717;
+            --surface-hover: #262626;
+            --gold-primary: #d4af37;
+            --gold-light: #fde08b;
+            --text-main: #ffffff;
+            --text-muted: #a3a3a3;
+            --border-color: #333333;
+            --success: #4caf50;
+            --error: #e57373;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', sans-serif; background-color: #000;
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; color: var(--text-main);
+        }
+
+        .mobile-container {
+            width: 100%; max-width: 450px; min-height: 100vh;
+            background-color: var(--bg-dark); position: relative;
+            display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(212, 175, 55, 0.05);
+        }
+
+        .header {
+            padding: 40px 20px 20px; background: rgba(10, 10, 10, 0.95);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2); display: flex;
+            justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10;
+        }
+
+        .header-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--gold-light); }
+        .logout-btn { background: none; border: none; color: var(--text-muted); font-size: 14px; cursor: pointer; transition: color 0.3s; }
+        .logout-btn:hover { color: var(--text-main); }
+
+        .content { flex: 1; overflow-y: auto; padding: 25px 20px 100px; }
+
+        /* Карточка пользователя */
+        .user-card {
+            display: flex; align-items: center; gap: 20px; margin-bottom: 30px;
+            background: var(--surface); padding: 20px; border-radius: 16px; border: 1px solid var(--border-color);
+        }
+        .avatar-large {
+            width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, var(--gold-primary), var(--gold-light));
+            display: flex; justify-content: center; align-items: center; color: #000;
+            font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+        }
+        .user-details h2 { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text-main); margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+        .user-details p { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Дашборд статистики */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        .stat-box {
+            background: var(--surface); border: 1px solid var(--border-color);
+            border-radius: 16px; padding: 20px; text-align: center;
+        }
+        .stat-value { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--gold-light); font-weight: 600; margin-bottom: 5px; }
+        .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.4; }
+        
+        .stat-box.full-width { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .stat-box.full-width .stat-value { font-size: 24px; margin-bottom: 0; }
+        
+        .progress-bar-bg { width: 100%; height: 6px; background: var(--bg-dark); border-radius: 3px; margin-top: 15px; overflow: hidden; border: 1px solid #222; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold-primary), var(--gold-light)); width: 0%; transition: width 0.8s ease-out; }
+
+        /* Сертификат */
+        .cert-card {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), transparent);
+            border: 1px dashed var(--gold-primary); border-radius: 16px; padding: 25px 20px;
+            text-align: center; margin-bottom: 30px; position: relative; overflow: hidden;
+        }
+        .cert-icon { font-size: 40px; margin-bottom: 10px; opacity: 0.5; filter: grayscale(1); transition: 0.5s; }
+        .cert-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text-main); margin-bottom: 8px; }
+        .cert-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px; }
+        
+        .btn-cert {
+            background: var(--bg-dark); border: 1px solid #444; color: #666;
+            padding: 14px; width: 100%; border-radius: 10px; font-family: 'Inter', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: not-allowed; transition: all 0.3s;
+        }
+        
+        .cert-card.unlocked { border-style: solid; background: rgba(212, 175, 55, 0.05); }
+        .cert-card.unlocked .cert-icon { opacity: 1; filter: grayscale(0); }
+        .cert-card.unlocked .cert-title { color: var(--gold-light); }
+        .cert-card.unlocked .btn-cert {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-light));
+            color: #000; border: none; cursor: pointer;
+        }
+        .cert-card.unlocked .btn-cert:active { transform: scale(0.98); }
+
+        /* Настройки */
+        .settings-section h3 { font-size: 14px; color: var(--gold-primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
+        .settings-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--surface); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 10px;
+        }
+        .settings-text { font-size: 14px; color: var(--text-main); }
+        .settings-desc { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        
+        /* Тумблер */
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--gold-primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Навигация */
+        .bottom-nav {
+            display: flex; justify-content: space-around; padding: 15px 10px 25px; width: 100%; max-width: 450px;
+            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border-color);
+            position: fixed; bottom: 0; z-index: 100;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; color: var(--text-muted); transition: color 0.3s; width: 33%; }
+        .nav-item.active { color: var(--gold-primary); }
+        .nav-icon { font-size: 22px; line-height: 1; }
+        .nav-text { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-container">
+        
+        <div class="header">
+            <h1 class="header-title">Профиль</h1>
+            <button class="logout-btn" id="logoutBtn">Выйти</button>
+        </div>
+
+        <div class="content">
+            
+            <div class="user-card">
+                <div class="avatar-large" id="user-avatar">?</div>
+                <div class="user-details">
+                    <h2 id="user-name">Загрузка...</h2>
+                    <p>Статус: Ученик марафона</p>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box full-width">
+                    <div>
+                        <div class="stat-label">Прогресс курса</div>
+                        <div class="stat-value"><span id="course-progress-text">0</span>%</div>
+                    </div>
+                    <div style="flex: 1; margin-left: 20px;">
+                        <div style="font-size: 12px; color: var(--text-muted); text-align: right;"><span id="modules-count">0</span>/5 Модулей</div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="course-progress-fill"></div></div>
+                    </div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-value" id="challenge-count">0</div>
+                    <div class="stat-label">Дел из челленджа<br>выполнено</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-value" id="insights-count">0</div>
+                    <div class="stat-label">Инсайтов<br>записано</div>
+                </div>
+            </div>
+
+            <div class="cert-card" id="cert-card">
+                <div class="cert-icon">🏆</div>
+                <h3 class="cert-title">Сертификат выпускника</h3>
+                <p class="cert-desc" id="cert-desc">Пройдите все 5 модулей и сдайте финальные тесты, чтобы получить сертификат.</p>
+                <button class="btn-cert" id="btn-cert" disabled>Сертификат недоступен</button>
+            </div>
+
+            <div class="settings-section">
+                <h3>Синхронизация и Данные</h3>
+                
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-text">Облачное сохранение</div>
+                        <div class="settings-desc" id="sync-status">Отправить прогресс в базу данных</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="cloud-sync-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-row" style="cursor: pointer;" onclick="window.resetProgress()">
+                    <div>
+                        <div class="settings-text" style="color: var(--error);">Сбросить весь прогресс</div>
+                        <div class="settings-desc">Удалить данные с этого устройства</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="window.location.href='index.html'">
+                <div class="nav-icon">▤</div>
+                <div class="nav-text">Курс</div>
+            </div>
+            <div class="nav-item" onclick="window.location.href='index.html'">
+                <div class="nav-icon">⚒</div>
+                <div class="nav-text">Инструменты</div>
+            </div>
+            <div class="nav-item active">
+                <div class="nav-icon">👤</div>
+                <div class="nav-text">Профиль</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Модули Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // Исправленные ключи конфигурации (переведено обратно на технический язык)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCber9hVJt50u2l_gCCy8YAzmJ4tcd3gJA",
+            authDomain: "profinancy-c6709.firebaseapp.com",
+            databaseURL: "https://profinancy-c6709-default-rtdb.firebaseio.com",
+            projectId: "profinancy-c6709",
+            storageBucket: "profinancy-c6709.firebasestorage.app",
+            messagingSenderId: "583520365222",
+            appId: "1:583520365222:web:bcce6adb7e3a3a97c42267"
+        };
+
+        // Инициализация Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUserUid = null;
+
+        // 1. Проверка авторизации
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserUid = user.uid;
+                
+                // Вытаскиваем имя пользователя из email для красивого отображения
+                const displayName = user.email.split('@')[0];
+                document.getElementById('user-name').textContent = displayName;
+                document.getElementById('user-avatar').textContent = displayName.charAt(0).toUpperCase();
+            } else {
+                // Если не вошел — отправляем на страницу входа
+                window.location.href = 'auth.html';
+            }
+        });
+
+        // 2. Логика кнопки Выйти
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            signOut(auth).then(() => {
+                window.location.href = 'auth.html';
+            }).catch((error) => {
+                alert("Ошибка при выходе: " + error.message);
+            });
+        });
+
+        // 3. Подсчет статистики из localStorage
+        document.addEventListener("DOMContentLoaded", () => {
+            let completedModules = 0;
+            for (let i = 1; i <= 5; i++) {
+                if (localStorage.getItem(`module${i}_completed`) === 'true') {
+                    completedModules++;
+                }
+            }
+            
+            const coursePercent = (completedModules / 5) * 100;
+            document.getElementById('course-progress-text').textContent = coursePercent;
+            document.getElementById('modules-count').textContent = completedModules;
+            setTimeout(() => { document.getElementById('course-progress-fill').style.width = coursePercent + '%'; }, 300);
+
+            // Челлендж
+            const challengeState = JSON.parse(localStorage.getItem('financeChallengeState')) || {};
+            document.getElementById('challenge-count').textContent = Object.values(challengeState).filter(task => task.done).length;
+
+            // Инсайты
+            const insights = JSON.parse(localStorage.getItem('financeInsightsData')) || [];
+            document.getElementById('insights-count').textContent = insights.length;
+
+            // Сертификат
+            if (completedModules === 5) {
+                const certCard = document.getElementById('cert-card');
+                const btnCert = document.getElementById('btn-cert');
+                certCard.classList.add('unlocked');
+                document.getElementById('cert-desc').textContent = 'Поздравляем! Вы успешно завершили марафон.';
+                btnCert.removeAttribute('disabled');
+                btnCert.textContent = 'Скачать сертификат';
+                btnCert.onclick = () => window.location.href = 'certificate.html';
+            }
+        });
+
+        // 4. Синхронизация с облачной базой Firestore
+        const cloudToggle = document.getElementById('cloud-sync-toggle');
+        const syncStatus = document.getElementById('sync-status');
+        
+        cloudToggle.addEventListener('change', async (e) => {
+            if (e.target.checked && currentUserUid) {
+                syncStatus.textContent = "Идет синхронизация...";
+                syncStatus.style.color = "var(--gold-light)";
+                
+                try {
+                    // Берем ВСЕ данные приложения из телефона
+                    const allLocalData = JSON.stringify(localStorage);
+                    
+                    // Отправляем в облако в папку конкретного пользователя
+                    await setDoc(doc(db, "users_data", currentUserUid), {
+                        localData: allLocalData,
+                        lastSync: new Date().toISOString()
+                    }, { merge: true });
+                    
+                    // Успех
+                    syncStatus.textContent = "Прогресс успешно сохранен в облако ✓";
+                    syncStatus.style.color = "var(--success)";
+                    
+                    // Возвращаем тумблер обратно через 3 секунды
+                    setTimeout(() => { 
+                        syncStatus.textContent = "Отправить прогресс в базу данных"; 
+                        syncStatus.style.color = "var(--text-muted)";
+                        e.target.checked = false; 
+                    }, 3000);
+
+                } catch (err) {
+                    // Ошибка
+                    console.error(err);
+                    syncStatus.textContent = "Ошибка сети. Попробуйте позже.";
+                    syncStatus.style.color = "var(--error)";
+                    e.target.checked = false;
+                }
+            }
+        });
+
+        // 5. Очистка прогресса (делаем глобальной)
+        window.resetProgress = function() {
+            if(confirm('Вы уверены, что хотите удалить весь локальный прогресс на этом устройстве?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

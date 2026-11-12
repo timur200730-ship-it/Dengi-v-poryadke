@@ -6,12 +6,10 @@
     <title>Личный финансовый план | Деньги в порядке</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
     <!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+
 <!-- Наш скрипт облачной синхронизации -->
-<script src="cloud-sync.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <style>
         :root { --bg-dark: #000; --surface: #171717; --gold-primary: #d4af37; --gold-light: #fde08b; --text-main: #fff; --text-muted: #a3a3a3; --border-color: #333; --success: #4caf50; }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -58,6 +56,8 @@
             .wb-input, .wb-textarea { background: #f9f9f9 !important; border: 1px solid #ccc !important; color: #000 !important; }
         }
     </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
 </head>
 <body>
     <div class="mobile-container">
@@ -170,7 +170,7 @@
 
             ws.addRow(['ЛИЧНЫЙ ФИНАНСОВЫЙ ПЛАН (ИТОГ МАРАФОНА)']).font = {bold: true, size: 14, color: {argb: 'FFD4AF37'}};
             ws.addRow([]);
-            ws.addRow(['Текущий чистый капитал (₽):', document.getElementById('lfp_networth'].value);
+            ws.addRow(['Текущий чистый капитал (₽):', document.getElementById('lfp_networth').value]);
             ws.addRow(['Целевой капитал через 5-10 лет (₽):', document.getElementById('lfp_target_capital').value]);
             ws.addRow(['Желаемый пассивный доход (₽/мес):', document.getElementById('lfp_passive').value]);
             ws.addRow(['Примечания по безопасности:', document.getElementById('lfp_safety_notes').value]);
@@ -191,5 +191,6 @@
             window.location.href = 'index.html';
         }
     </script>
+<script>if ('serviceWorker' in navigator && location.protocol !== 'file:') { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('SW registration failed', err))); }</script>
 </body>
 </html>

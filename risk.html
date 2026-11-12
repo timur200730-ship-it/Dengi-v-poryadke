@@ -190,6 +190,8 @@
             .chart-container { height: 250px; }
         }
     </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
 </head>
 <body>
 
@@ -415,5 +417,6 @@
             });
         }
     </script>
+<script>if ('serviceWorker' in navigator && location.protocol !== 'file:') { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('SW registration failed', err))); }</script>
 </body>
 </html>

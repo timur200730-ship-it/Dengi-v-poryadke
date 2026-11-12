@@ -61,6 +61,8 @@
             .wb-textarea { background: #f9f9f9 !important; border: 1px solid #ddd !important; color: #000 !important; }
         }
     </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
 </head>
 <body>
     <div class="mobile-container">
@@ -271,5 +273,6 @@
             renderSliders();
         });
     </script>
+<script>if ('serviceWorker' in navigator && location.protocol !== 'file:') { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('SW registration failed', err))); }</script>
 </body>
 </html>

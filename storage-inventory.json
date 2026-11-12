@@ -1,0 +1,229 @@
+{
+  "accelerator.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "auth.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "key"
+    ]
+  },
+  "balance.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "breakthrough.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "STORAGE_KEY",
+      "TEXT_KEY"
+    ]
+  },
+  "certificate.html": {
+    "literal_keys": [
+      "cert_id",
+      "cert_name"
+    ],
+    "dynamic_expressions": [
+      "`module${i}_completed`"
+    ]
+  },
+  "challenge.html": {
+    "literal_keys": [
+      "financeChallengeState"
+    ],
+    "dynamic_expressions": []
+  },
+  "dividends.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "energy.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "freedom.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "habit21.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "html.html": {
+    "literal_keys": [
+      "financeChallengeState"
+    ],
+    "dynamic_expressions": []
+  },
+  "index.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "`module${i}_completed`"
+    ]
+  },
+  "insights.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "STORAGE_KEY"
+    ]
+  },
+  "lesson1.html": {
+    "literal_keys": [
+      "module1_completed",
+      "user_goal"
+    ],
+    "dynamic_expressions": []
+  },
+  "lesson2.html": {
+    "literal_keys": [
+      "module2_completed"
+    ],
+    "dynamic_expressions": []
+  },
+  "lesson3.html": {
+    "literal_keys": [
+      "module3_completed"
+    ],
+    "dynamic_expressions": []
+  },
+  "lesson4.html": {
+    "literal_keys": [
+      "module4_completed"
+    ],
+    "dynamic_expressions": []
+  },
+  "life-balance.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "STORAGE_KEY",
+      "TEXT_KEY"
+    ]
+  },
+  "matrix.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "networth.html": {
+    "literal_keys": [
+      "saved_html_"
+    ],
+    "dynamic_expressions": []
+  },
+  "profile.html": {
+    "literal_keys": [
+      "financeChallengeState",
+      "financeInsightsData"
+    ],
+    "dynamic_expressions": [
+      "`module${i}_completed`"
+    ]
+  },
+  "psychology.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "smart.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "test1.html": {
+    "literal_keys": [
+      "module1_completed"
+    ],
+    "dynamic_expressions": []
+  },
+  "test2.html": {
+    "literal_keys": [
+      "module2_completed"
+    ],
+    "dynamic_expressions": []
+  },
+  "test3.html": {
+    "literal_keys": [
+      "module3_completed"
+    ],
+    "dynamic_expressions": []
+  },
+  "test4.html": {
+    "literal_keys": [
+      "module4_completed"
+    ],
+    "dynamic_expressions": []
+  },
+  "test5.html": {
+    "literal_keys": [
+      "module5_completed"
+    ],
+    "dynamic_expressions": []
+  },
+  "tracker.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "visuals.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "workbook1.html": {
+    "literal_keys": [
+      "saved_html_"
+    ],
+    "dynamic_expressions": []
+  },
+  "workbook2.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "workbook3.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "workbook4.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "workbook5.html": {
+    "literal_keys": [
+      "module5_completed"
+    ],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  },
+  "xray.html": {
+    "literal_keys": [],
+    "dynamic_expressions": [
+      "PAGE_KEY"
+    ]
+  }
+}

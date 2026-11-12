@@ -1,0 +1,13 @@
+const CACHE_NAME = 'dengi-v-poryadke-v1';
+const CORE = ['./', './manifest.json', './icon-192.svg', './icon-512.svg', './accelerator.html', './auth.html', './balance.html', './breakthrough.html', './certificate.html', './challenge.html', './dividends.html', './energy.html', './freedom.html', './guide1.html', './guide2.html', './guide3.html', './guide4.html', './guide5.html', './habit21.html', './html.html', './index.html', './insights.html', './lesson1.html', './lesson2.html', './lesson3.html', './lesson4.html', './lesson5.html', './life-balance.html', './matrix.html', './networth.html', './profile.html', './psychology.html', './risk.html', './smart.html', './test1.html', './test2.html', './test3.html', './test4.html', './test5.html', './tracker.html', './visuals.html', './workbook1.html', './workbook2.html', './workbook3.html', './workbook4.html', './workbook5.html', './xray.html'];
+self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())); });
+self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener('fetch', event => {
+ const req = event.request; if (req.method !== 'GET') return;
+ const url = new URL(req.url);
+ if (url.origin === self.location.origin) {
+  event.respondWith(caches.match(req).then(cached => cached || fetch(req).then(res => { if (res.ok) { const copy=res.clone(); caches.open(CACHE_NAME).then(c=>c.put(req,copy)); } return res; }).catch(() => caches.match('./index.html'))));
+ } else {
+  event.respondWith(caches.match(req).then(cached => cached || fetch(req).then(res => { if (res && (res.ok || res.type === 'opaque')) { const copy=res.clone(); caches.open(CACHE_NAME).then(c=>c.put(req,copy)); } return res; }).catch(() => cached || Response.error())));
+ }
+});

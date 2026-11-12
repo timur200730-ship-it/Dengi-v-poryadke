@@ -69,6 +69,8 @@
         }
         .read-btn.completed { background: linear-gradient(135deg, var(--gold-primary), var(--gold-light)); color: #000; border: none; }
     </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
 </head>
 <body>
 
@@ -123,5 +125,6 @@
             setTimeout(() => { window.location.href='lesson2.html'; }, 800);
         });
     </script>
+<script>if ('serviceWorker' in navigator && location.protocol !== 'file:') { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('SW registration failed', err))); }</script>
 </body>
 </html>

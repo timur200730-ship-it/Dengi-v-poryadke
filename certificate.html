@@ -343,6 +343,8 @@
         color: var(--gold-light); text-transform: uppercase;
     }
 </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
 </head>
 <body>
     <div class="mobile-container">
@@ -433,69 +435,22 @@
 
     </div>
 
-    <!-- Авторизация Firebase -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCber9hVJt50u2l_gCCy8YAzmJ4tcd3gJA",
-            authDomain: "profinancy-c6709.firebaseapp.com",
-            databaseURL: "https://profinancy-c6709-default-rtdb.firebaseio.com",
-            projectId: "profinancy-c6709",
-            storageBucket: "profinancy-c6709.firebasestorage.app",
-            messagingSenderId: "583520365222",
-            appId: "1:583520365222:web:bcce6adb7e3a3a97c42267"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
-        onAuthStateChanged(auth, (user) => {
-            document.body.style.opacity = '1';
-
-            if (!user) {
-                window.location.href = 'auth.html';
-                return;
-            }
-
-            let completedCount = 0;
-            for (let i = 1; i <= 5; i++) {
-                if (localStorage.getItem(`module${i}_completed`) === 'true') completedCount++;
-            }
-            if (completedCount < 5) {
-                alert('Сертификат доступен после прохождения всех 5 недель курса.');
-                window.location.href = 'index.html';
-                return;
-            }
-
-            const savedName = localStorage.getItem('cert_name');
-            const defaultName = user.email.split('@')[0];
+    <script>
+        document.body.style.opacity = '1';
+        let completedCount = 0;
+        for (let i = 1; i <= 5; i++) if (localStorage.getItem(`module${i}_completed`) === 'true') completedCount++;
+        if (completedCount < 5) {
+            alert('Сертификат доступен после прохождения всех 5 недель курса.');
+            window.location.href = 'index.html';
+        } else {
+            const savedName = localStorage.getItem('cert_name') || localStorage.getItem('dvp_user_name') || '';
             const nameInput = document.getElementById('studentName');
-            nameInput.value = savedName || defaultName;
-
+            if (nameInput) nameInput.value = savedName;
             let certId = localStorage.getItem('cert_id');
-            if (!certId) {
-                const year = new Date().getFullYear();
-                const rand = Math.floor(1000 + Math.random() * 9000);
-                certId = `DVP-${year}-${rand}`;
-                localStorage.setItem('cert_id', certId);
-            }
-            document.getElementById('certId').textContent = 'ID сертификата: ' + certId;
-
-            const dateInput = document.getElementById('certDate');
-            if (!dateInput.value) {
-                const d = new Date();
-                const dd = String(d.getDate()).padStart(2, '0');
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const yyyy = d.getFullYear();
-                dateInput.value = `${dd}.${mm}.${yyyy}`;
-            }
-
-            nameInput.addEventListener('input', () => {
-                localStorage.setItem('cert_name', nameInput.value);
-            });
-        });
+            if (!certId) { const year = new Date().getFullYear(); const rand = Math.floor(1000 + Math.random() * 9000); certId = `DVP-${year}-${rand}`; localStorage.setItem('cert_id', certId); }
+            const idNode = document.getElementById('certId');
+            if (idNode) idNode.textContent = 'ID сертификата: ' + certId;
+        }
     </script>
 
     <!-- Утилиты -->
@@ -621,5 +576,6 @@
             }
         }
     </script>
+<script>if ('serviceWorker' in navigator && location.protocol !== 'file:') { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('SW registration failed', err))); }</script>
 </body>
 </html>

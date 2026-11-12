@@ -6,11 +6,8 @@
     <title>Профиль | Деньги в порядке</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <!-- Наш скрипт облачной синхронизации -->
-<script src="cloud-sync.js"></script>
+
 <style>
         :root {
             --bg-dark: #0a0a0a;
@@ -132,6 +129,8 @@
         .nav-icon { font-size: 22px; line-height: 1; }
         .nav-text { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
     </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
 </head>
 <body>
 
@@ -224,134 +223,29 @@
     </div>
 
     <!-- Модули Firebase -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
-        // Исправленные ключи конфигурации (переведено обратно на технический язык)
-        const firebaseConfig = {
-            apiKey: "AIzaSyCber9hVJt50u2l_gCCy8YAzmJ4tcd3gJA",
-            authDomain: "profinancy-c6709.firebaseapp.com",
-            databaseURL: "https://profinancy-c6709-default-rtdb.firebaseio.com",
-            projectId: "profinancy-c6709",
-            storageBucket: "profinancy-c6709.firebasestorage.app",
-            messagingSenderId: "583520365222",
-            appId: "1:583520365222:web:bcce6adb7e3a3a97c42267"
-        };
-
-        // Инициализация Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        let currentUserUid = null;
-
-        // 1. Проверка авторизации
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUserUid = user.uid;
-                
-                // Вытаскиваем имя пользователя из email для красивого отображения
-                const displayName = user.email.split('@')[0];
-                document.getElementById('user-name').textContent = displayName;
-                document.getElementById('user-avatar').textContent = displayName.charAt(0).toUpperCase();
-            } else {
-                // Если не вошел — отправляем на страницу входа
-                window.location.href = 'auth.html';
-            }
-        });
-
-        // 2. Логика кнопки Выйти
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            signOut(auth).then(() => {
-                window.location.href = 'auth.html';
-            }).catch((error) => {
-                alert("Ошибка при выходе: " + error.message);
-            });
-        });
-
-        // 3. Подсчет статистики из localStorage
-        document.addEventListener("DOMContentLoaded", () => {
-            let completedModules = 0;
-            for (let i = 1; i <= 5; i++) {
-                if (localStorage.getItem(`module${i}_completed`) === 'true') {
-                    completedModules++;
-                }
-            }
-            
-            const coursePercent = (completedModules / 5) * 100;
-            document.getElementById('course-progress-text').textContent = coursePercent;
-            document.getElementById('modules-count').textContent = completedModules;
-            setTimeout(() => { document.getElementById('course-progress-fill').style.width = coursePercent + '%'; }, 300);
-
-            // Челлендж
-            const challengeState = JSON.parse(localStorage.getItem('financeChallengeState')) || {};
-            document.getElementById('challenge-count').textContent = Object.values(challengeState).filter(task => task.done).length;
-
-            // Инсайты
-            const insights = JSON.parse(localStorage.getItem('financeInsightsData')) || [];
-            document.getElementById('insights-count').textContent = insights.length;
-
-            // Сертификат
-            if (completedModules === 5) {
-                const certCard = document.getElementById('cert-card');
-                const btnCert = document.getElementById('btn-cert');
-                certCard.classList.add('unlocked');
-                document.getElementById('cert-desc').textContent = 'Поздравляем! Вы успешно завершили марафон.';
-                btnCert.removeAttribute('disabled');
-                btnCert.textContent = 'Скачать сертификат';
-                btnCert.onclick = () => window.location.href = 'certificate.html';
-            }
-        });
-
-        // 4. Синхронизация с облачной базой Firestore
-        const cloudToggle = document.getElementById('cloud-sync-toggle');
-        const syncStatus = document.getElementById('sync-status');
-        
-        cloudToggle.addEventListener('change', async (e) => {
-            if (e.target.checked && currentUserUid) {
-                syncStatus.textContent = "Идет синхронизация...";
-                syncStatus.style.color = "var(--gold-light)";
-                
-                try {
-                    // Берем ВСЕ данные приложения из телефона
-                    const allLocalData = JSON.stringify(localStorage);
-                    
-                    // Отправляем в облако в папку конкретного пользователя
-                    await setDoc(doc(db, "users_data", currentUserUid), {
-                        localData: allLocalData,
-                        lastSync: new Date().toISOString()
-                    }, { merge: true });
-                    
-                    // Успех
-                    syncStatus.textContent = "Прогресс успешно сохранен в облако ✓";
-                    syncStatus.style.color = "var(--success)";
-                    
-                    // Возвращаем тумблер обратно через 3 секунды
-                    setTimeout(() => { 
-                        syncStatus.textContent = "Отправить прогресс в базу данных"; 
-                        syncStatus.style.color = "var(--text-muted)";
-                        e.target.checked = false; 
-                    }, 3000);
-
-                } catch (err) {
-                    // Ошибка
-                    console.error(err);
-                    syncStatus.textContent = "Ошибка сети. Попробуйте позже.";
-                    syncStatus.style.color = "var(--error)";
-                    e.target.checked = false;
-                }
-            }
-        });
-
-        // 5. Очистка прогресса (делаем глобальной)
-        window.resetProgress = function() {
-            if(confirm('Вы уверены, что хотите удалить весь локальный прогресс на этом устройстве?')) {
-                localStorage.clear();
-                location.reload();
-            }
-        }
-    </script>
+    <script>
+(function(){
+ const name=localStorage.getItem('dvp_user_name')||'Участник';
+ const nameEl=document.getElementById('user-name'); const avatar=document.getElementById('user-avatar');
+ if(nameEl) nameEl.textContent=name; if(avatar) avatar.textContent=(name.trim()[0]||'У').toUpperCase();
+ document.addEventListener('DOMContentLoaded',function(){
+  let completed=0; for(let i=1;i<=5;i++) if(localStorage.getItem(`module${i}_completed`)==='true') completed++;
+  const pct=Math.round(completed/5*100); const p=document.getElementById('course-progress-text'); const c=document.getElementById('modules-count'); const f=document.getElementById('course-progress-fill');
+  if(p)p.textContent=pct; if(c)c.textContent=completed; if(f)f.style.width=pct+'%';
+  const challenge=JSON.parse(localStorage.getItem('financeChallengeState')||'{}'); const cc=document.getElementById('challenge-count'); if(cc)cc.textContent=Object.values(challenge).filter(x=>x&&x.done).length;
+  const insights=JSON.parse(localStorage.getItem('financeInsightsData')||'[]'); const ic=document.getElementById('insights-count'); if(ic)ic.textContent=insights.length;
+  if(completed===5){const card=document.getElementById('cert-card');const btn=document.getElementById('btn-cert');if(card)card.classList.add('unlocked');const desc=document.getElementById('cert-desc');if(desc)desc.textContent='Поздравляем! Вы успешно завершили марафон.';if(btn){btn.removeAttribute('disabled');btn.textContent='Скачать сертификат';btn.onclick=()=>location.href='certificate.html';}}
+ });
+ const cloud=document.getElementById('cloud-sync-toggle'); if(cloud){cloud.checked=false;cloud.disabled=true;const wrap=cloud.closest('.settings-row')||cloud.parentElement;if(wrap)wrap.style.display='none';}
+ const status=document.getElementById('sync-status');if(status)status.textContent='Облачная синхронизация отключена: локальный режим';
+ const logout=document.getElementById('logoutBtn');if(logout){logout.textContent='На главную';logout.addEventListener('click',()=>location.href='index.html');}
+ window.resetProgress=function(){if(!confirm('Удалить данные приложения на этом устройстве? Резервную копию рекомендуется сохранить заранее.'))return;
+  const exact=['module1_completed','module2_completed','module3_completed','module4_completed','module5_completed','cert_id','cert_name','financeChallengeState','financeInsightsData','user_goal','dvp_user_name','accelerator_module','balance_module','dividends_module','energy_module','freedom_module_v2','habit21_module','financial_balance_data','financial_balance_texts','life_balance_data','life_balance_texts','matrix_module','psychology_module','smart_goals_list','tracker_module_v1','visuals_module','workbook2_data','workbook3_data','workbook4_data','workbook5_data','xray_module'];
+  exact.forEach(k=>localStorage.removeItem(k));
+  const prefixes=['saved_html_']; for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(prefixes.some(x=>k.startsWith(x))||/_module(?:_v\d+)?$/.test(k)||/^workbook[2-5]_data$/.test(k)||/^financial_balance_(data|texts)$/.test(k)||/^life_balance_(data|texts)$/.test(k)||k==='smart_goals_list')localStorage.removeItem(k);}
+  location.reload();};
+})();
+</script>
+<script>if ('serviceWorker' in navigator && location.protocol !== 'file:') { window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('SW registration failed', err))); }</script>
 </body>
 </html>
